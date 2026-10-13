@@ -1,0 +1,58 @@
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.label {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.valueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.unit {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.tone-neutral .value {
+  color: var(--color-text);
+}
+
+.tone-success .value {
+  color: var(--color-success);
+}
+
+.tone-warning .value {
+  color: var(--color-warning);
+}
+
+.tone-info .value {
+  color: var(--color-info);
+}

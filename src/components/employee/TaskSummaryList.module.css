@@ -1,0 +1,120 @@
+.statusRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+@media (max-width: 520px) {
+  .statusRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.statusChip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+
+.statusCount {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.statusLabel {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.task {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.task:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.taskTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.taskTitle {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.taskProject {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badge-pending {
+  color: var(--color-info);
+  background: var(--color-info-bg);
+}
+
+.badge-ongoing {
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+.badge-completed {
+  color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+.badge-overdue {
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+}
+
+.taskMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.track {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 999px;
+}

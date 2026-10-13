@@ -1,0 +1,87 @@
+.card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.iconWrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: var(--color-hr-accent-bg);
+  color: var(--color-hr-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.status {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.error {
+  font-size: 12px;
+  color: var(--color-danger);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.clockIn,
+.clockOut {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: none;
+}
+
+.clockIn {
+  background: var(--color-hr-cta);
+  color: var(--color-hr-cta-contrast);
+}
+
+.clockOut {
+  background: var(--color-surface);
+  color: var(--color-hr-accent);
+  border: 1px solid var(--color-hr-accent);
+}
+
+.clockIn:disabled,
+.clockOut:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

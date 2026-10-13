@@ -1,0 +1,40 @@
+.panel {
+  overflow-x: auto;
+}
+
+.modeSwitch {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+}
+
+.modeButton {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.modeButtonActive {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.calendarFilter {
+  margin-bottom: 12px;
+}
+
+.empty {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  padding: 20px 0;
+  text-align: center;
+}

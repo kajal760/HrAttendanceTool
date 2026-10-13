@@ -1,0 +1,88 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 6px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: inherit;
+}
+
+a.item:hover {
+  background: var(--color-bg);
+}
+
+.icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-attendance {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+.icon-leave {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+.icon-task {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+.icon-policy {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
+.icon-announcement {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.topLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unreadTag {
+  flex-shrink: 0;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.meta {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}

@@ -1,0 +1,216 @@
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.summaryLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.summaryIcon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.summaryLabel {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.summaryValue {
+  display: block;
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.quickButton {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.quickButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quickButton-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.quickButton-danger {
+  background: var(--color-danger);
+  color: #ffffff;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.statusBadge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.statusBadge-idle {
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+}
+
+.statusBadge-clockedin {
+  color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+.statusBadge-onbreak {
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+.statusBadge-clockedout {
+  color: var(--color-info);
+  background: var(--color-info-bg);
+}
+
+.timers {
+  display: flex;
+  gap: 28px;
+  margin: 18px 0;
+  flex-wrap: wrap;
+}
+
+.timerBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timerLabel {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.timerValue {
+  font-size: 30px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.timerValue-muted {
+  color: var(--color-text-muted);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.select {
+  font-size: 13px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.button {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-primary {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.button-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.button-danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 10px;
+}
+
+.hint-error {
+  color: var(--color-danger);
+}
+
+.breakList {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+}
+
+.breakListTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin: 0 0 8px;
+}
+
+.breakRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 4px 0;
+  color: var(--color-text-muted);
+}
+
+.breakRow span:first-child {
+  color: var(--color-text);
+}
+
+.summaryLine {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-top: 12px;
+}

@@ -1,0 +1,1342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HR Attendance — UI Preview</title>
+<style>
+  :root {
+    --color-bg: #f5f6f8; --color-surface: #ffffff; --color-border: #e3e6ea;
+    --color-text: #1a1d21; --color-text-muted: #666d76;
+    --color-primary: #4a3aa7; --color-primary-contrast: #ffffff;
+    --color-success: #1a8a4a; --color-success-bg: #e7f6ec;
+    --color-warning: #b96b00; --color-warning-bg: #fdf1e0;
+    --color-danger: #c62828; --color-danger-bg: #fbeaea;
+    --color-info: #4a3aa7; --color-info-bg: #ece9fb;
+    --color-hr-topbar: #14b8a6; --color-hr-sidebar: #0b6f64;
+    --color-hr-sidebar-hover: rgba(255,255,255,0.1); --color-hr-sidebar-active-bg: rgba(255,255,255,0.16);
+    --color-hr-sidebar-text: rgba(255,255,255,0.75); --color-hr-sidebar-text-active: #ffffff;
+    --color-hr-accent: #0d9488; --color-hr-accent-bg: #ccfbf1; --color-hr-cta: #f2542d;
+    --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px;
+    --shadow-sm: 0 1px 2px rgba(16,24,40,0.06); --shadow-md: 0 4px 12px rgba(16,24,40,0.08);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--color-bg); color: var(--color-text); }
+  button, input, select, textarea { font-family: inherit; }
+  a { color: inherit; }
+  svg.icon { width: 1em; height: 1em; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.15em; flex-shrink: 0; }
+
+  .demoBar { position: sticky; top: 0; z-index: 500; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 16px; background: #1a1d21; color: #fff; font-size: 12px; }
+  .demoBar strong { font-size: 12.5px; }
+  .demoNote { color: rgba(255,255,255,0.6); flex: 1; min-width: 160px; }
+  .demoBar button { font-size: 11.5px; font-weight: 600; padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: rgba(255,255,255,0.9); cursor: pointer; }
+  .demoBar button:hover { background: rgba(255,255,255,0.15); }
+
+  .appScreen { display: none; min-height: calc(100vh - 37px); }
+  .appScreen.active { display: block; }
+
+  .loginPage { min-height: calc(100vh - 37px); display: flex; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(160deg, var(--color-hr-sidebar) 0%, var(--color-bg) 55%); }
+  .loginCard { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 14px; padding: 32px 28px; border-radius: var(--radius-lg); background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-md); }
+  .loginBrand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px; color: var(--color-text-muted); }
+  .loginBrandMark { width: 28px; height: 28px; border-radius: 8px; background: var(--color-hr-accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .loginTitle { font-size: 20px; font-weight: 700; margin: 4px 0 0; }
+  .loginSubtitle { font-size: 13px; color: var(--color-text-muted); margin: 0 0 6px; }
+  .loginField { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 500; color: var(--color-text-muted); }
+  .loginField input { font-size: 14px; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-bg); color: var(--color-text); width: 100%; }
+  .loginSubmit { margin-top: 4px; font-size: 13px; font-weight: 600; padding: 10px 16px; border-radius: var(--radius-sm); border: none; background: var(--color-hr-accent); color: #fff; cursor: pointer; width: 100%; }
+  .loginSubmit:hover { background: var(--color-hr-sidebar); }
+  .loginRoleRow { display: flex; gap: 8px; }
+  .loginRoleBtn { flex: 1; font-size: 12px; font-weight: 600; padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-muted); cursor: pointer; }
+  .loginRoleBtn.roleActive { border-color: var(--color-hr-accent); color: var(--color-hr-accent); background: var(--color-hr-accent-bg); }
+  .loginHint { font-size: 11px; color: var(--color-text-muted); text-align: center; margin: 0; }
+
+  .shell { display: flex; flex-direction: column; height: calc(100vh - 37px); }
+  .topbar { display: flex; align-items: center; gap: 16px; padding: 10px 20px; background: var(--color-hr-topbar); color: #fff; flex-shrink: 0; }
+  .topbarBrand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; flex-shrink: 0; }
+  .topbarBrandMark { width: 30px; height: 30px; border-radius: 8px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .topbarSearchWrap { position: relative; flex: 1; max-width: 420px; }
+  .topbarSearchWrap input { width: 100%; background: rgba(255,255,255,0.14); border: none; border-radius: 999px; padding: 8px 14px 8px 36px; color: #fff; font-size: 13px; outline: none; }
+  .topbarSearchWrap input::placeholder { color: rgba(255,255,255,0.65); }
+  .topbarSearchIcon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.75); }
+  .topbarRight { margin-left: auto; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+  .topbarIconBtn { display: flex; color: rgba(255,255,255,0.85); background: none; border: none; cursor: pointer; padding: 4px; }
+  .topbarAvatar { width: 32px; height: 32px; border-radius: 999px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .searchDropdown { position: absolute; top: calc(100% + 8px); left: 0; width: 100%; min-width: 300px; max-height: 60vh; overflow-y: auto; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: 6px; z-index: 100; color: var(--color-text); display: none; }
+  .searchDropdown.open { display: block; }
+  .searchResultItem { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: left; padding: 8px; border: none; background: none; border-radius: var(--radius-sm); font-size: 13px; color: var(--color-text); cursor: pointer; }
+  .searchResultItem:hover { background: var(--color-bg); }
+  .searchResultType { font-size: 11px; color: var(--color-text-muted); flex-shrink: 0; }
+  .searchEmpty { padding: 12px; font-size: 13px; color: var(--color-text-muted); text-align: center; }
+
+  .body { flex: 1; display: flex; min-height: 0; }
+  .sidebar { flex-shrink: 0; width: 84px; background: var(--color-hr-sidebar); padding: 12px 8px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+  .sidebarItem { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: var(--radius-md); color: var(--color-hr-sidebar-text); background: none; border: none; font-size: 10.3px; text-align: center; cursor: pointer; width: 100%; }
+  .sidebarItem:hover:not(.sidebarItemDisabled) { background: var(--color-hr-sidebar-hover); color: var(--color-hr-sidebar-text-active); }
+  .sidebarItem.sidebarItemActive { background: var(--color-hr-sidebar-active-bg); color: var(--color-hr-sidebar-text-active); }
+  .sidebarItem.sidebarItemDisabled { opacity: 0.4; cursor: default; }
+  .sidebarDivider { height: 1px; background: rgba(255,255,255,0.14); margin: 6px 6px; flex-shrink: 0; }
+
+  .content { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+  .secondaryNav { display: flex; align-items: center; gap: 4px; padding: 0 20px; background: var(--color-surface); border-bottom: 1px solid var(--color-border); overflow-x: auto; flex-shrink: 0; }
+  .secondaryLink { padding: 13px 4px; font-size: 13px; font-weight: 500; color: var(--color-text-muted); background: none; border: none; border-bottom: 2px solid transparent; white-space: nowrap; margin-right: 22px; cursor: pointer; }
+  .secondaryLink:hover { color: var(--color-text); }
+  .secondaryLink.secondaryLinkActive { color: var(--color-hr-accent); border-bottom-color: var(--color-hr-accent); font-weight: 600; }
+  .employeeTheme .secondaryLink.secondaryLinkActive { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+
+  .mainScroll { flex: 1; min-height: 0; overflow-y: auto; }
+  .main { padding: 24px; max-width: 1280px; width: 100%; margin: 0 auto; }
+  .pageHeader { margin-bottom: 20px; }
+  .pageTitle { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
+  .pageSubtitle { font-size: 13px; color: var(--color-text-muted); margin: 0; }
+
+  .statGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .statCard { display: flex; align-items: center; gap: 12px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 14px 16px; min-width: 0; }
+  .statIconWrap { flex-shrink: 0; width: 38px; height: 38px; border-radius: var(--radius-md); background: var(--color-hr-accent-bg); color: var(--color-hr-accent); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .employeeTheme .statIconWrap { background: var(--color-info-bg); color: var(--color-primary); }
+  .statLabel { font-size: 11.5px; color: var(--color-text-muted); }
+  .statValue { font-size: 20px; font-weight: 700; line-height: 1.2; }
+
+  .sectionCard { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 20px; margin-bottom: 16px; }
+  .sectionCard:last-child { margin-bottom: 0; }
+  .sectionCardHeader { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+  .sectionCardTitle { font-size: 15px; font-weight: 600; margin: 0; }
+  .sectionCardSubtitle { font-size: 12px; color: var(--color-text-muted); }
+
+  .filterBar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .searchInput { flex: 1; min-width: 180px; font-size: 13px; padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); }
+  .filterSelect { font-size: 12px; font-weight: 600; padding: 7px 9px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); }
+  .addBtn { font-size: 12px; font-weight: 700; padding: 8px 14px; border-radius: var(--radius-sm); border: none; background: var(--color-hr-cta); color: #fff; cursor: pointer; white-space: nowrap; }
+  .employeeTheme .addBtn { background: var(--color-primary); }
+  .clearBtn { font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-muted); cursor: pointer; white-space: nowrap; }
+  .clearBtn:hover { background: var(--color-bg); }
+
+  .inlineForm { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 14px; }
+  .formGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 10px; }
+  .formGrid label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 600; color: var(--color-text-muted); }
+  .formGrid input, .formGrid select, .formGrid textarea { font: inherit; font-size: 13px; font-weight: 400; color: var(--color-text); padding: 7px 9px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-surface); }
+  .formActions { display: flex; gap: 8px; }
+
+  .simpleTable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tableWrap { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
+  .simpleTable th { text-align: left; font-size: 11px; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.03em; padding: 10px 14px; background: var(--color-bg); border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+  .simpleTable td { padding: 10px 14px; border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+  .simpleTable tr:last-child td { border-bottom: none; }
+  .actionBtn { font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: var(--radius-sm); border: none; cursor: pointer; margin-right: 4px; }
+  .actionBtn.approve { background: var(--color-success); color: #fff; }
+  .actionBtn.reject { background: transparent; color: var(--color-danger); border: 1px solid var(--color-danger); }
+
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .badge-success { color: var(--color-success); background: var(--color-success-bg); }
+  .badge-warning { color: var(--color-warning); background: var(--color-warning-bg); }
+  .badge-danger { color: var(--color-danger); background: var(--color-danger-bg); }
+  .badge-info { color: var(--color-info); background: var(--color-info-bg); }
+  .badge-muted { color: var(--color-text-muted); background: var(--color-bg); }
+
+  .cardsGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .genericCard { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .genericCardTitle { font-size: 14px; font-weight: 700; margin: 0; }
+  .genericCardMeta { font-size: 12px; color: var(--color-text-muted); }
+  .genericCardFoot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+
+  .formCard { max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
+  .formField { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: var(--color-text-muted); }
+  .formField select, .formField input, .formField textarea { font: inherit; font-size: 13px; font-weight: 400; color: var(--color-text); padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-surface); }
+  .formHint { font-size: 12px; color: var(--color-text-muted); margin: 0; }
+  .formNote { font-size: 12.5px; color: var(--color-info); background: var(--color-info-bg); border-radius: var(--radius-sm); padding: 9px 12px; margin: 0; }
+  .saveBtn { align-self: flex-start; font-size: 13px; font-weight: 600; padding: 9px 18px; border-radius: var(--radius-sm); border: none; background: var(--color-hr-cta); color: #fff; cursor: pointer; }
+  .employeeTheme .saveBtn { background: var(--color-primary); }
+  .savedNote { font-size: 12px; color: var(--color-success); margin: 0; }
+
+  .chipRow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .emptyHint { font-size: 12px; color: var(--color-text-muted); padding: 20px; text-align: center; }
+
+  .clockCard { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 18px; margin-bottom: 20px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+  .clockIconWrap { width: 38px; height: 38px; border-radius: 999px; background: var(--color-hr-accent-bg); color: var(--color-hr-accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+  .employeeTheme .clockIconWrap { background: var(--color-info-bg); color: var(--color-primary); }
+  .clockBody { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+  .clockLabel { font-size: 11px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+  .clockStatus { font-size: 14px; font-weight: 700; }
+  .clockMeta { font-size: 12px; color: var(--color-text-muted); }
+  .clockActions { display: flex; gap: 8px; }
+  .btnClockIn, .btnClockOut { font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; border: none; }
+  .btnClockIn { background: var(--color-hr-cta); color: #fff; }
+  .employeeTheme .btnClockIn { background: var(--color-primary); }
+  .btnClockOut { background: var(--color-surface); color: var(--color-hr-accent); border: 1px solid var(--color-hr-accent); }
+  .employeeTheme .btnClockOut { color: var(--color-primary); border-color: var(--color-primary); }
+  .btnClockIn:disabled, .btnClockOut:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .layout2 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: start; }
+  .chartRow { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .bars { display: flex; align-items: flex-end; gap: 10px; height: 110px; padding-bottom: 4px; }
+  .bars .bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .bars .bar .fill { width: 70%; border-radius: 4px 4px 0 0; background: var(--color-hr-accent); }
+  .bars .bar .tick { font-size: 10px; color: var(--color-text-muted); }
+  .hbars { display: flex; flex-direction: column; gap: 10px; }
+  .hbar-row { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+  .hbar-label { width: 90px; flex-shrink: 0; color: var(--color-text-muted); }
+  .hbar-track { flex: 1; height: 8px; border-radius: 999px; background: var(--color-bg); overflow: hidden; }
+  .hbar-fill { height: 100%; border-radius: 999px; display: block; }
+  .hbar-value { width: 28px; text-align: right; font-weight: 600; }
+  .list { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .list li { display: flex; flex-direction: column; gap: 2px; padding-bottom: 10px; border-bottom: 1px solid var(--color-border); font-size: 12.5px; }
+  .list li:last-child { border-bottom: none; padding-bottom: 0; }
+  .list .listMeta { font-size: 11.5px; color: var(--color-text-muted); }
+  .quickActionBtn { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); font-size: 13px; font-weight: 600; color: var(--color-text); margin-bottom: 8px; cursor: pointer; }
+  .quickActionBtn:hover { background: var(--color-bg); }
+  .quickActionBtn .qaIcon { color: var(--color-hr-accent); }
+  .viewAllLink { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 600; color: var(--color-hr-accent); text-decoration: none; cursor: pointer; }
+
+  .calendarCard { border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-sm); padding: 18px 20px 20px; }
+  .calendarHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .monthLabel { font-size: 15px; font-weight: 700; }
+  .navBtn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-muted); cursor: pointer; }
+  .navBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .calGrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+  .weekday { font-size: 10.5px; font-weight: 700; color: var(--color-text-muted); text-align: center; text-transform: uppercase; letter-spacing: 0.03em; padding-bottom: 8px; margin-bottom: 4px; border-bottom: 1px solid var(--color-border); }
+  .dayCell { min-height: 72px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 7px; display: flex; flex-direction: column; gap: 5px; background: var(--color-surface); }
+  .dayCell.weekend { background: var(--color-bg); }
+  .dayCell.today { border-color: var(--color-hr-accent); background: var(--color-hr-accent-bg); box-shadow: inset 0 0 0 1px var(--color-hr-accent); }
+  .dayCell.blank { visibility: hidden; }
+  .dayNum { font-size: 11px; font-weight: 600; color: var(--color-text-muted); }
+  .dayNum.todayNum { display: inline-flex; align-items: center; justify-content: center; width: 19px; height: 19px; border-radius: 999px; background: var(--color-hr-accent); color: #fff; font-weight: 700; }
+  .dayChips { display: flex; flex-wrap: wrap; gap: 3px; }
+  .dayChip { font-size: 9.2px; font-weight: 600; padding: 1px 6px; border-radius: 999px; white-space: nowrap; }
+  .legend { display: flex; align-items: center; gap: 14px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--color-border); font-size: 12px; color: var(--color-text-muted); }
+  .legendItem { display: flex; align-items: center; gap: 6px; }
+  .legendSwatch { width: 10px; height: 10px; border-radius: 3px; }
+
+  .profileHeader { display: flex; align-items: center; gap: 14px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 18px 20px; margin-bottom: 16px; flex-wrap: wrap; }
+  .profileAvatar { width: 52px; height: 52px; border-radius: 999px; background: var(--color-info-bg); color: var(--color-info); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; flex-shrink: 0; }
+  .profileBody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .profileNameRow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .profileName { font-size: 18px; font-weight: 700; margin: 0; }
+  .profileSubline { font-size: 13px; color: var(--color-text-muted); }
+  .factGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+  .fact { display: flex; flex-direction: column; gap: 2px; }
+  .factLabel { font-size: 11px; color: var(--color-text-muted); }
+  .factValue { font-size: 13px; font-weight: 600; }
+  .editBtn { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 8px 14px; border-radius: var(--radius-sm); border: none; background: var(--color-primary); color: #fff; cursor: pointer; }
+  .cancelBtn { font-size: 12px; font-weight: 600; padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-muted); cursor: pointer; }
+
+  .alertOverlay { position: fixed; inset: 0; background: rgba(15,18,22,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 1000; }
+  .alertOverlay.open { display: flex; }
+  .alertBox { width: 100%; max-width: 380px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); padding: 20px; text-align: center; }
+  .alertIcon { width: 42px; height: 42px; margin: 0 auto 12px; border-radius: 999px; background: var(--color-info-bg); color: var(--color-info); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .alertTitle { font-size: 15px; font-weight: 700; margin: 0 0 6px; }
+  .alertText { font-size: 12.5px; color: var(--color-text-muted); margin: 0 0 16px; line-height: 1.5; }
+  .alertButton { font-size: 13px; font-weight: 700; padding: 9px 20px; border-radius: var(--radius-sm); border: none; background: var(--color-primary); color: #fff; cursor: pointer; }
+
+  .comingSoon { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 60px 20px; text-align: center; color: var(--color-text-muted); }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: #1a1d21; color: #fff; padding: 10px 16px; border-radius: var(--radius-sm); font-size: 13px; z-index: 2000; box-shadow: var(--shadow-md); opacity: 0; transform: translateY(8px); transition: opacity 0.15s ease, transform 0.15s ease; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 900px) { .layout2, .chartRow { grid-template-columns: 1fr; } .statGrid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+
+<div class="demoBar">
+  <strong>HR Attendance — UI preview</strong>
+  <span class="demoNote">Interactive mockup — search, filters, add/edit/approve all work against in-memory sample data (no server, nothing is permanently saved or sent anywhere).</span>
+  <button onclick="goTo('login')">⟵ Back to login</button>
+</div>
+
+<!-- ============================= LOGIN ============================= -->
+<section id="screen-login" class="appScreen active">
+  <div class="loginPage">
+    <form class="loginCard" onsubmit="return false;">
+      <div class="loginBrand"><span class="loginBrandMark">HR</span><span>HR Attendance</span></div>
+      <h1 class="loginTitle">Sign in</h1>
+      <p class="loginSubtitle">Use your company email and password.</p>
+      <label class="loginField"><span>Email</span><input type="email" placeholder="you@company.com" /></label>
+      <label class="loginField"><span>Password</span><input type="password" placeholder="••••••••" /></label>
+      <p class="loginHint">Pick which portal to preview (this demo has no real accounts):</p>
+      <div class="loginRoleRow">
+        <button type="button" class="loginRoleBtn roleActive" id="roleHr" onclick="pickRole('hr')">HR / Admin</button>
+        <button type="button" class="loginRoleBtn" id="roleEmp" onclick="pickRole('employee')">Employee</button>
+      </div>
+      <button type="button" class="loginSubmit" onclick="goTo(pickedRole)">Sign in</button>
+    </form>
+  </div>
+</section>
+
+<!-- ============================= HR / SUPERADMIN SHELL ============================= -->
+<section id="screen-hr" class="appScreen">
+  <div class="shell">
+    <div class="topbar">
+      <div class="topbarBrand"><span class="topbarBrandMark">HR</span><span>HR Attendance</span></div>
+      <div class="topbarSearchWrap">
+        <span class="topbarSearchIcon"><svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+        <input id="hrGlobalSearch" placeholder="Search employees, projects, tasks…" oninput="doGlobalSearch('hr', this.value)" onfocus="if(this.value) doGlobalSearch('hr', this.value)" />
+        <div class="searchDropdown" id="hrSearchDropdown"></div>
+      </div>
+      <div class="topbarRight">
+        <button class="topbarIconBtn" title="Notifications"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+        <button class="topbarIconBtn" title="Sign out" onclick="goTo('login')"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+        <span class="topbarAvatar">SA</span>
+      </div>
+    </div>
+    <div class="body">
+      <div class="sidebar" id="hrSidebar"></div>
+      <div class="content">
+        <div class="secondaryNav" id="hrSecondaryNav"></div>
+        <div class="mainScroll"><div class="main" id="hrMain"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================= EMPLOYEE SHELL ============================= -->
+<section id="screen-employee" class="appScreen">
+  <div class="shell employeeTheme">
+    <div class="topbar">
+      <div class="topbarBrand"><span class="topbarBrandMark">HR</span><span>HR Attendance</span></div>
+      <div class="topbarSearchWrap">
+        <span class="topbarSearchIcon"><svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+        <input id="empGlobalSearch" placeholder="Search announcements, tasks…" oninput="doGlobalSearch('emp', this.value)" onfocus="if(this.value) doGlobalSearch('emp', this.value)" />
+        <div class="searchDropdown" id="empSearchDropdown"></div>
+      </div>
+      <div class="topbarRight">
+        <button class="topbarIconBtn" title="Notifications"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+        <button class="topbarIconBtn" title="Sign out" onclick="goTo('login')"><svg class="icon" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+        <span class="topbarAvatar">AK</span>
+      </div>
+    </div>
+    <div class="body">
+      <div class="sidebar" id="empSidebar"></div>
+      <div class="content">
+        <div class="secondaryNav" id="empSecondaryNav"></div>
+        <div class="mainScroll"><div class="main" id="empMain"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="alertOverlay" id="profileAlert">
+  <div class="alertBox">
+    <span class="alertIcon"><svg class="icon" style="width:20px;height:20px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>
+    <h3 class="alertTitle">Changes saved</h3>
+    <p class="alertText" id="profileAlertText">Your profile has been updated. HR will be notified about the changes you made.</p>
+    <button class="alertButton" onclick="document.getElementById('profileAlert').classList.remove('open')">OK</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   Icons
+   ============================================================ */
+var ICONS = {
+  grid: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+  users: '<circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><circle cx="17" cy="7" r="3"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>',
+  calCheck: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><path d="M8 14l2 2 5-5"/>',
+  calDot: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><circle cx="12" cy="15" r="2"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',
+  trend: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+  box: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
+  route: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  cake: '<path d="M4 20h16v-3a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3z"/><path d="M4 14h16"/><path d="M12 10V4"/><circle cx="12" cy="3" r="1"/>',
+  chart: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+  briefcase: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+  megaphone: '<path d="M3 11l18-7-7 18-2-8-8-2z"/>',
+  shield: '<path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/>',
+  history: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/><path d="M3 12a9 9 0 0 1 3-6.7"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  ticket: '<path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/>',
+  pencil: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>',
+  chevLeft: '<polyline points="15 18 9 12 15 6"/>',
+  chevRight: '<polyline points="9 18 15 12 9 6"/>',
+  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  inbox: '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+  person: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/>',
+  doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+  home: '<path d="M3 9l9-7 9 7"/><path d="M9 22V12h6v10"/><path d="M5 10v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10"/>'
+};
+function icon(name, size) {
+  return '<svg class="icon" style="width:' + (size || 18) + 'px;height:' + (size || 18) + 'px" viewBox="0 0 24 24">' + (ICONS[name] || '') + '</svg>';
+}
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+  });
+}
+function uniq(arr) { var seen = {}; var out = []; arr.forEach(function (v) { if (!seen[v]) { seen[v] = 1; out.push(v); } }); return out; }
+function range(a, b) { var out = []; for (var i = a; i <= b; i++) out.push(i); return out; }
+function byId(id) { return document.getElementById(id); }
+function showToast(msg) {
+  var t = byId('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200);
+}
+
+/* ============================================================
+   In-memory "database" - everything below is mutable sample
+   data. Nothing here is persisted or sent anywhere.
+   ============================================================ */
+var DB = {
+  employees: [
+    { id: 'e1', name: 'Aisha Khan', dept: 'Engineering', designation: 'Software Engineer', status: 'Active',
+      dob: '1996-03-14', gender: 'Female', marital: 'Single',
+      phone: '+91 98765 43210', personalEmail: 'aisha.khan@example.com', currentAddr: 'Bengaluru, KA', permAddr: 'Lucknow, UP',
+      emName: 'Imran Khan', emRel: 'Father', emPhone: '+91 90000 11111',
+      manager: 'Rohan Mehta', joined: '2025-01-14', skills: ['TypeScript', 'React', 'Next.js'] },
+    { id: 'e2', name: 'Rohan Mehta', dept: 'Engineering', designation: 'Engineering Manager', status: 'Active',
+      dob: '1990-06-02', gender: 'Male', marital: 'Married', phone: '+91 98123 45678', personalEmail: 'rohan.mehta@example.com',
+      currentAddr: 'Bengaluru, KA', permAddr: 'Pune, MH', emName: 'Sana Mehta', emRel: 'Spouse', emPhone: '+91 90000 22222',
+      manager: 'CEO', joined: '2021-03-02', skills: ['Leadership', 'System Design'] },
+    { id: 'e3', name: 'Priya Sharma', dept: 'Sales', designation: 'Account Executive', status: 'Active',
+      dob: '1994-11-20', gender: 'Female', marital: 'Single', phone: '+91 99887 76655', personalEmail: 'priya.sharma@example.com',
+      currentAddr: 'Mumbai, MH', permAddr: 'Jaipur, RJ', emName: 'Sunita Sharma', emRel: 'Mother', emPhone: '+91 90000 33333',
+      manager: 'Kabir Anand', joined: '2023-07-10', skills: ['Negotiation', 'CRM'] },
+    { id: 'e4', name: 'Daniel Fernandes', dept: 'Finance', designation: 'Financial Analyst', status: 'On Leave',
+      dob: '1992-02-05', gender: 'Male', marital: 'Married', phone: '+91 97765 54433', personalEmail: 'daniel.f@example.com',
+      currentAddr: 'Goa', permAddr: 'Goa', emName: 'Maria Fernandes', emRel: 'Spouse', emPhone: '+91 90000 44444',
+      manager: 'Vikram Rao', joined: '2022-09-18', skills: ['Excel', 'Forecasting'] }
+  ],
+  projects: [
+    { id: 'p1', name: 'Checkout redesign', dept: 'Engineering', members: 'Aisha Khan, Rohan Mehta', deadline: '2026-11-30' },
+    { id: 'p2', name: 'Q4 renewals push', dept: 'Sales', members: 'Priya Sharma', deadline: '2026-12-15' },
+    { id: 'p3', name: 'Benefits portal', dept: 'HR', members: '', deadline: '' }
+  ],
+  tasks: [
+    { id: 't1', title: 'Payment gateway integration', projectId: 'p1', assignees: 'Aisha Khan', deadline: '2026-10-18', status: 'Ongoing' },
+    { id: 't2', title: 'Write test cases', projectId: 'p1', assignees: 'Aisha Khan', deadline: '2026-10-12', status: 'Pending' },
+    { id: 't3', title: 'Renewal email sequence', projectId: 'p2', assignees: 'Priya Sharma', deadline: '2026-10-05', status: 'Ongoing' }
+  ],
+  leaveRequests: [
+    { id: 'l1', employee: 'Daniel Fernandes', category: 'Casual Leave', from: '2026-10-10', to: '2026-10-12', days: 3, status: 'Pending' },
+    { id: 'l2', employee: 'Priya Sharma', category: 'Sick Leave', from: '2026-10-01', to: '2026-10-02', days: 2, status: 'Approved' },
+    { id: 'l3', employee: 'Aisha Khan', category: 'Casual Leave', from: '2026-09-18', to: '2026-09-19', days: 2, status: 'Approved' }
+  ],
+  announcements: [
+    { id: 'a1', title: 'Diwali office closure', date: '2026-10-28', status: 'Published' },
+    { id: 'a2', title: 'New leave policy', date: '2026-10-01', status: 'Published' },
+    { id: 'a3', title: 'Town hall - Q4 kickoff', date: '2026-10-15', status: 'Scheduled' },
+    { id: 'a4', title: 'New office seating plan', date: '', status: 'Draft' }
+  ]
+};
+var DEMO_TODAY = new Date(2026, 9, 9); // 9 Oct 2026 - fixed "today" so overdue/leave math is stable
+
+function deptOptions() { return uniq(DB.employees.map(function (e) { return e.dept; })); }
+
+/* ============================================================
+   Generic search-enabled table/cards (for the long tail of
+   mostly-illustrative pages: Lifecycle, Assets, Timesheets, etc.)
+   ============================================================ */
+var PAGE_DATA = {};
+var __pid = 0;
+function tbl(cols, rows) {
+  var id = 'tbl' + (__pid++);
+  PAGE_DATA[id] = { type: 'table', columns: cols, rows: rows };
+  return { page: 'table', id: id };
+}
+function cards(items) {
+  var id = 'crd' + (__pid++);
+  PAGE_DATA[id] = { type: 'cards', items: items };
+  return { page: 'cards', id: id };
+}
+function frm(fields, hint, note) { return { page: 'form', fields: fields, hint: hint, note: note }; }
+
+var STATUS_WORDS = ['Present', 'Late', 'Absent', 'On Leave', 'Approved', 'Pending', 'Overdue', 'Ongoing', 'Active',
+  'Published', 'Scheduled', 'Draft', 'Archived', 'Good', 'Cleared', 'In progress', 'Notice period', 'Assigned', 'In stock', 'Upcoming', 'Delayed', 'Completed', 'Rejected'];
+function badgeClass(text) {
+  var t = (text || '').toLowerCase();
+  if (['active', 'present', 'approved', 'published', 'good', 'clear', 'cleared', 'completed'].indexOf(t) > -1) return 'badge-success';
+  if (['pending', 'scheduled', 'draft', 'in progress', 'notice period'].indexOf(t) > -1) return 'badge-warning';
+  if (['overdue', 'absent', 'rejected', 'archived', 'delayed'].indexOf(t) > -1) return 'badge-danger';
+  if (['on leave', 'upcoming', 'ongoing'].indexOf(t) > -1) return 'badge-info';
+  return 'badge-muted';
+}
+function tableRowsHtml(columns, rows) {
+  if (rows.length === 0) return '<tr><td colspan="' + columns.length + '" class="emptyHint">No matching rows.</td></tr>';
+  return rows.map(function (r) {
+    return '<tr>' + r.map(function (cell, i) {
+      var isStatusCol = i === r.length - 1 && STATUS_WORDS.indexOf(cell) > -1;
+      return '<td>' + (isStatusCol ? '<span class="badge ' + badgeClass(cell) + '">' + esc(cell) + '</span>' : esc(cell)) + '</td>';
+    }).join('') + '</tr>';
+  }).join('');
+}
+function tableHtmlFromRows(columns, rows) {
+  return '<div class="tableWrap"><table class="simpleTable"><thead><tr>' +
+    columns.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') +
+    '</tr></thead><tbody>' + tableRowsHtml(columns, rows) + '</tbody></table></div>';
+}
+function cardsHtmlFromItems(items) {
+  if (items.length === 0) return '<div class="emptyHint">No matching items.</div>';
+  return '<div class="cardsGrid">' + items.map(function (c) {
+    return '<div class="genericCard"><h4 class="genericCardTitle">' + esc(c.title) + '</h4>' +
+      '<span class="genericCardMeta">' + esc(c.meta) + '</span>' +
+      (c.badge ? '<div class="genericCardFoot"><span class="badge ' + badgeClass(c.badge) + '">' + esc(c.badge) + '</span></div>' : '') +
+      '</div>';
+  }).join('') + '</div>';
+}
+function filterTable(id) {
+  var d = PAGE_DATA[id];
+  var q = (byId('search-' + id).value || '').toLowerCase().trim();
+  var rows = !q ? d.rows : d.rows.filter(function (r) { return r.join(' ').toLowerCase().indexOf(q) > -1; });
+  byId('res-' + id).innerHTML = tableHtmlFromRows(d.columns, rows);
+}
+function filterCards(id) {
+  var d = PAGE_DATA[id];
+  var q = (byId('search-' + id).value || '').toLowerCase().trim();
+  var items = !q ? d.items : d.items.filter(function (c) { return (c.title + ' ' + c.meta).toLowerCase().indexOf(q) > -1; });
+  byId('res-' + id).innerHTML = cardsHtmlFromItems(items);
+}
+function tableWithSearchHtml(id) {
+  var d = PAGE_DATA[id];
+  return '<div class="filterBar"><input id="search-' + id + '" class="searchInput" placeholder="Search this list…" oninput="filterTable(\'' + id + '\')" /></div>' +
+    '<div id="res-' + id + '">' + tableHtmlFromRows(d.columns, d.rows) + '</div>';
+}
+function cardsWithSearchHtml(id) {
+  var d = PAGE_DATA[id];
+  return '<div class="filterBar"><input id="search-' + id + '" class="searchInput" placeholder="Search this list…" oninput="filterCards(\'' + id + '\')" /></div>' +
+    '<div id="res-' + id + '">' + cardsHtmlFromItems(d.items) + '</div>';
+}
+function renderFormPage(spec) {
+  var fields = spec.fields.map(function (f) {
+    if (f.type === 'select-pair') return '<div class="formField"><span>' + f.label + '</span><div style="display:flex;gap:8px;"><select><option>July</option></select><select><option>1</option></select></div></div>';
+    if (f.type === 'textarea') return '<div class="formField"><span>' + f.label + '</span><textarea rows="3"></textarea></div>';
+    if (f.type === 'toggle') return '<div class="formField"><span>' + f.label + '</span><select><option' + (f.value === 'On' ? ' selected' : '') + '>On</option><option>Off</option></select></div>';
+    if (f.type === 'select') return '<div class="formField"><span>' + f.label + '</span><select><option>' + esc(f.value) + '</option></select></div>';
+    return '<div class="formField"><span>' + f.label + '</span><input type="' + (f.type || 'text') + '" value="' + esc(f.value || '') + '" /></div>';
+  }).join('');
+  return '<div class="formCard">' + fields +
+    (spec.hint ? '<p class="formHint">' + spec.hint + '</p>' : '') +
+    (spec.note ? '<p class="formNote">' + spec.note + '</p>' : '') +
+    '<button type="button" class="saveBtn" onclick="showToast(\'Saved.\')">Save</button></div>';
+}
+function renderComingSoon(label) {
+  return '<div class="comingSoon">' + icon('settings', 34) + '<p>' + esc(label || 'This section') + ' is marked "coming soon" in the real app - greyed out in the sidebar, nothing to show here yet.</p></div>';
+}
+function renderBody(tab) {
+  if (!tab.data) return '';
+  if (tab.data.page === 'table') return tableWithSearchHtml(tab.data.id);
+  if (tab.data.page === 'cards') return cardsWithSearchHtml(tab.data.id);
+  if (tab.data.page === 'form') return renderFormPage(tab.data);
+  if (tab.data.page === 'coming-soon') return renderComingSoon(tab.label);
+  return '';
+}
+
+/* ============================================================
+   Nav + tab data
+   ============================================================ */
+var HR_NAV = {
+  primary: [
+    { key: 'home', label: 'Dashboard', icon: 'grid', enabled: true },
+    { key: 'employees', label: 'Employees', icon: 'users', enabled: true },
+    { key: 'attendance', label: 'Attendance', icon: 'calCheck', enabled: true },
+    { key: 'leave', label: 'Leave', icon: 'calDot', enabled: true },
+    { key: 'timesheets', label: 'Timesheets', icon: 'clock', enabled: true },
+    { key: 'assets', label: 'Assets', icon: 'box', enabled: true },
+    { key: 'lifecycle', label: 'Lifecycle', icon: 'route', enabled: true },
+    { key: 'celebrations', label: 'Celebrations', icon: 'cake', enabled: true },
+    { key: 'performance', label: 'Performance', icon: 'trend', enabled: false },
+    { key: 'analytics', label: 'Analytics', icon: 'chart', enabled: false }
+  ],
+  more: [
+    { key: 'work', label: 'Work & Projects', icon: 'briefcase', enabled: true },
+    { key: 'announcements', label: 'Announcements', icon: 'megaphone', enabled: true },
+    { key: 'roles', label: 'Roles & Permissions', icon: 'shield', enabled: true },
+    { key: 'log', label: 'Log', icon: 'history', enabled: true },
+    { key: 'settings', label: 'Settings', icon: 'settings', enabled: false },
+    { key: 'tickets', label: 'Tickets', icon: 'ticket', enabled: false }
+  ]
+};
+var EMP_NAV = {
+  primary: [
+    { key: 'dashboard', label: 'Dashboard', icon: 'home', enabled: true },
+    { key: 'attendance', label: 'Attendance', icon: 'calCheck', enabled: true },
+    { key: 'leave', label: 'Leave', icon: 'calDot', enabled: true },
+    { key: 'tasks', label: 'Tasks & Projects', icon: 'briefcase', enabled: true },
+    { key: 'profile', label: 'My Profile', icon: 'person', enabled: true },
+    { key: 'documents', label: 'Documents', icon: 'doc', enabled: true }
+  ],
+  more: [
+    { key: 'requests', label: 'Requests', icon: 'inbox', enabled: true },
+    { key: 'announcements', label: 'Announcements', icon: 'megaphone', enabled: true },
+    { key: 'assets', label: 'Assets', icon: 'box', enabled: true }
+  ]
+};
+
+function hrTabs() {
+  return {
+    home: [
+      { label: 'Dashboard', page: 'home-dashboard' },
+      { label: 'Reports', title: 'Reports', subtitle: 'Exportable company-wide reports.',
+        data: cards([{ title: 'Monthly attendance summary', meta: 'PDF · updated daily' }, { title: 'Leave liability report', meta: 'XLSX · updated weekly' }, { title: 'Headcount by department', meta: 'XLSX · updated daily' }]) }
+    ],
+    employees: [ { label: 'Employee Directory', page: 'employees-directory' },
+      { label: 'Employee Master', title: 'Employee Master', subtitle: 'Full HR record per employee.',
+        data: tbl(['Code', 'Name', 'Department', 'Status'], DB.employees.map(function (e) { return [e.id.toUpperCase(), e.name, e.dept, e.status]; })) },
+      { label: 'Departments', title: 'Departments', subtitle: 'Headcount and department heads.',
+        data: cards(deptOptions().map(function (d) { return { title: d, meta: DB.employees.filter(function (e) { return e.dept === d; }).length + ' people' }; })) },
+      { label: 'Designations', title: 'Designations', subtitle: 'Job titles in use across departments.',
+        data: tbl(['Designation', 'Department'], uniq(DB.employees.map(function (e) { return e.designation + '|' + e.dept; })).map(function (s) { return s.split('|'); })) },
+      { label: 'Org Structure', title: 'Org Structure', subtitle: 'Reporting lines across the company.',
+        data: tbl(['Name', 'Reports to', 'Department'], DB.employees.map(function (e) { return [e.name, e.manager, e.dept]; })) }
+    ],
+    attendance: [
+      { label: 'Today', title: 'Attendance', subtitle: "Today's check-ins across the company.",
+        data: tbl(['Employee', 'Department', 'Check-in', 'Status'], [['Aisha Khan', 'Engineering', '09:14', 'Present'], ['Priya Sharma', 'Sales', '09:48', 'Late'], ['Daniel Fernandes', 'Finance', '—', 'On Leave']]) },
+      { label: 'Attendance History', title: 'Attendance History', subtitle: 'Historical attendance by date range.',
+        data: tbl(['Date', 'Employee', 'Check-in', 'Status'], [['08 Oct 2026', 'Aisha Khan', '09:10', 'Present'], ['07 Oct 2026', 'Aisha Khan', '09:05', 'Present'], ['06 Oct 2026', 'Priya Sharma', '09:55', 'Late']]) },
+      { label: 'Late Check-ins', title: 'Late Check-ins', subtitle: 'Everyone who checked in after the grace window.',
+        data: tbl(['Employee', 'Department', 'Check-in', 'Minutes late'], [['Priya Sharma', 'Sales', '09:48', '18'], ['Daniel Fernandes', 'Finance', '09:52', '22']]) },
+      { label: 'Corrections', title: 'Corrections', subtitle: 'Attendance correction requests awaiting review.',
+        data: tbl(['Employee', 'Date', 'Requested change', 'Status'], [['Aisha Khan', '05 Oct 2026', 'Missed check-out → 18:10', 'Pending'], ['Rohan Mehta', '03 Oct 2026', 'Check-in → 09:00', 'Approved']]) },
+      { label: 'My Clock History', title: 'My Clock History', subtitle: 'Your own clock-in/clock-out record (HR/Admin self-tracking).',
+        data: tbl(['Date', 'Clock in', 'Clock out', 'Worked'], [['09 Oct 2026', '09:14', '18:30', '9h 16m'], ['08 Oct 2026', '09:05', '18:12', '9h 07m'], ['07 Oct 2026', '09:20', '17:55', '8h 35m']]) }
+    ],
+    leave: [
+      { label: 'Leave Requests', page: 'leave-requests' },
+      { label: 'Leave Balance', title: 'Leave Balance', subtitle: 'Allocated vs. used, per employee.',
+        data: tbl(['Employee', 'Casual', 'Sick', 'Earned'], [['Aisha Khan', '12 / 4', '8 / 1', '4 / 0'], ['Priya Sharma', '12 / 6', '8 / 2', '4 / 1']]) },
+      { label: 'Leave History', title: 'Leave History', subtitle: 'Decided leave requests.',
+        data: tbl(['Employee', 'Category', 'Dates', 'Status'], [['Priya Sharma', 'Sick Leave', '01–02 Oct 2026', 'Approved'], ['Aisha Khan', 'Casual Leave', '18–19 Sep 2026', 'Approved']]) },
+      { label: 'Leave Calendar', page: 'leave-calendar' },
+      { label: 'Leave Policy', page: 'leave-policy' }
+    ],
+    timesheets: [
+      { label: 'Employee Timesheets', title: 'Employee Timesheets', subtitle: 'What everyone logged - hours, task, description.',
+        data: tbl(['Date', 'Employee', 'Department', 'Hours', 'Task'], [['08 Oct 2026', 'Aisha Khan', 'Engineering', '7h', 'Checkout redesign'], ['08 Oct 2026', 'Priya Sharma', 'Sales', '6h', 'Client renewals']]) },
+      { label: 'Working Hours', title: 'Working Hours', subtitle: 'Net working hours by employee.',
+        data: tbl(['Employee', 'Date', 'Net hours'], [['Aisha Khan', '08 Oct 2026', '8h 10m'], ['Priya Sharma', '08 Oct 2026', '7h 40m']]) },
+      { label: 'Breaks', title: 'Breaks', subtitle: 'Break duration logged per day.', data: tbl(['Employee', 'Date', 'Break'], [['Aisha Khan', '08 Oct 2026', '45m'], ['Priya Sharma', '08 Oct 2026', '35m']]) },
+      { label: 'Task Distribution', title: 'Task Distribution', subtitle: 'Hours logged per task across the team.',
+        data: tbl(['Task', 'Hours logged', 'Employees'], [['Checkout redesign', '62h', '3'], ['Client renewals', '40h', '2']]) }
+    ],
+    assets: [
+      { label: 'Asset Inventory', title: 'Asset Inventory', subtitle: 'Every company asset on record.', data: tbl(['Asset', 'Type', 'Status'], [['MacBook Pro 14"', 'Laptop', 'Assigned'], ['Dell 27" Monitor', 'Monitor', 'In stock']]) },
+      { label: 'Allocation', title: 'Allocation', subtitle: 'Assets currently assigned to employees.', data: tbl(['Asset', 'Employee', 'Allocated on'], [['MacBook Pro 14"', 'Aisha Khan', '14 Jan 2025'], ['iPhone 14', 'Rohan Mehta', '02 Mar 2025']]) },
+      { label: 'Returns', title: 'Returns', subtitle: 'Assets returned by employees.', data: tbl(['Asset', 'Employee', 'Condition'], [['Dell Latitude 5420', 'Vikram Rao', 'Good']]) },
+      { label: 'Asset History', title: 'Asset History', subtitle: 'Full lifecycle trail per asset.', data: tbl(['Asset', 'Event', 'Date'], [['MacBook Pro 14"', 'Assigned', '14 Jan 2025'], ['Dell Latitude 5420', 'Returned', '20 Sep 2026']]) }
+    ],
+    lifecycle: [
+      { label: 'Joining', title: 'Joining', subtitle: 'New hires in progress.', data: tbl(['Employee', 'Stage', 'Date'], [['Meera Iyer', 'Documentation', '06 Oct 2026']]) },
+      { label: 'Onboarding', title: 'Onboarding', subtitle: 'Checklist progress for new joiners.', data: tbl(['Employee', 'Checklist', 'Status'], [['Meera Iyer', 'IT setup', 'In progress']]) },
+      { label: 'Confirmation', title: 'Confirmation', subtitle: 'Probation confirmations due.', data: tbl(['Employee', 'Probation ends', 'Status'], [['Daniel Fernandes', '15 Oct 2026', 'Pending']]) },
+      { label: 'Transfer & Promotion', title: 'Transfer & Promotion', subtitle: 'Department/role changes.', data: tbl(['Employee', 'Change', 'Effective'], [['Priya Sharma', 'Promoted to Senior AE', '01 Nov 2026']]) },
+      { label: 'Role Change', title: 'Role Change', subtitle: 'Designation changes.', data: tbl(['Employee', 'From', 'To'], [['Priya Sharma', 'Account Executive', 'Senior Account Executive']]) },
+      { label: 'Separation', title: 'Separation', subtitle: 'Employees serving notice.', data: tbl(['Employee', 'Last working day', 'Status'], [['Vikram Rao', '30 Oct 2026', 'Notice period']]) },
+      { label: 'Full & Final', title: 'Full & Final', subtitle: 'Settlement status for exited employees.', data: tbl(['Employee', 'Exit date', 'Status'], [['Karan Bose', '15 Sep 2026', 'Cleared']]) }
+    ],
+    celebrations: [
+      { label: 'Birthdays', title: 'Birthdays', subtitle: 'Upcoming birthdays across the company.', data: cards([{ title: 'Aisha Khan', meta: 'Tomorrow · Engineering' }, { title: 'Daniel Fernandes', meta: 'In 4 days · Finance' }]) },
+      { label: 'Anniversaries', title: 'Anniversaries', subtitle: 'Upcoming work anniversaries.', data: cards([{ title: 'Rohan Mehta', meta: '5 years · 22 Oct 2026' }]) },
+      { label: 'Email Settings', title: 'Email Settings', subtitle: 'Automatic celebration email controls.', data: frm([{ label: 'Birthday emails', type: 'toggle', value: 'On' }, { label: 'Anniversary emails', type: 'toggle', value: 'On' }, { label: 'Send time', type: 'text', value: '10:00' }]) }
+    ],
+    performance: [{ label: 'Performance', title: 'Performance', subtitle: 'Coming soon.', data: { page: 'coming-soon' } }],
+    analytics: [{ label: 'Analytics', title: 'Analytics', subtitle: 'Coming soon.', data: { page: 'coming-soon' } }],
+    settings: [{ label: 'Settings', title: 'Settings', subtitle: 'Coming soon.', data: { page: 'coming-soon' } }],
+    tickets: [{ label: 'Tickets', title: 'Tickets', subtitle: 'Coming soon.', data: { page: 'coming-soon' } }],
+    work: [
+      { label: 'Projects', page: 'work-projects' },
+      { label: 'Tasks', page: 'work-tasks' },
+      { label: 'Workload', page: 'work-workload' }
+    ],
+    announcements: [
+      { label: 'All', page: 'announcements', status: '' },
+      { label: 'Published', page: 'announcements', status: 'Published' },
+      { label: 'Scheduled', page: 'announcements', status: 'Scheduled' },
+      { label: 'Drafts', page: 'announcements', status: 'Draft' },
+      { label: 'Archived', page: 'announcements', status: 'Archived' }
+    ],
+    roles: [{ label: 'Roles & Permissions', title: 'Roles & Permissions', subtitle: 'Who can see and do what.',
+      data: tbl(['Role', 'Users', 'Scope'], [['Super Admin', '2', 'Full access'], ['HR', '5', 'HR module'], ['Employee', '121', 'Self-service only']]) }],
+    log: [{ label: 'Activity Log', title: 'Activity Log', subtitle: 'System-wide activity, newest first.',
+      data: tbl(['Time', 'Module', 'Event', 'Actor', 'Severity'], [['10:42', 'Attendance', 'Clock-in recorded', 'Aisha Khan', 'info'], ['10:15', 'Leave', 'Leave request approved', 'Rohan Mehta', 'info'], ['09:58', 'Work', 'Task marked overdue', 'System', 'warning']]) }]
+  };
+}
+
+function empTabs() {
+  return {
+    dashboard: [{ label: 'Dashboard', page: 'employee-dashboard' }],
+    attendance: [
+      { label: 'Today', title: 'Attendance', subtitle: 'Your clock-in/out for today.', data: tbl(['Check-in', 'Status'], [['09:14', 'Present']]) },
+      { label: 'Attendance History', title: 'Attendance History', subtitle: 'Your attendance by date.', data: tbl(['Date', 'Check-in', 'Status'], [['08 Oct 2026', '09:10', 'Present'], ['07 Oct 2026', '09:05', 'Present']]) },
+      { label: 'Breaks', title: 'Breaks', subtitle: 'Your break time by day.', data: tbl(['Date', 'Break'], [['08 Oct 2026', '45m']]) },
+      { label: 'Timesheet', title: 'Timesheet', subtitle: 'Hours you logged against tasks.', data: tbl(['Date', 'Hours', 'Task'], [['08 Oct 2026', '7h', 'Checkout redesign']]) },
+      { label: 'Corrections', title: 'Corrections', subtitle: 'Your correction requests.', data: tbl(['Date', 'Requested change', 'Status'], [['05 Oct 2026', 'Missed check-out → 18:10', 'Pending']]) }
+    ],
+    leave: [
+      { label: 'Leave Balance', title: 'Leave Balance', subtitle: 'Your allocated vs. used leave.',
+        data: cards([{ title: 'Casual Leave', meta: '12 allocated · 4 used · 8 remaining' }, { title: 'Sick Leave', meta: '8 allocated · 1 used · 7 remaining' }, { title: 'Earned Leave', meta: '4 allocated · 0 used · 4 remaining' }]) },
+      { label: 'Apply Leave', page: 'apply-leave' },
+      { label: 'Leave History', title: 'Leave History', subtitle: 'Your past leave requests.', data: tbl(['Category', 'Dates', 'Status'], [['Sick Leave', '01–02 Oct 2026', 'Approved']]) }
+    ],
+    tasks: [
+      { label: 'My Tasks', title: 'My Tasks', subtitle: 'Tasks assigned to you.', data: tbl(['Task', 'Project', 'Deadline', 'Status'], [['Payment gateway integration', 'Checkout redesign', '18 Oct 2026', 'Ongoing']]) },
+      { label: 'Projects', title: 'Projects', subtitle: 'Projects you are part of.', data: cards([{ title: 'Checkout redesign', meta: 'Engineering · Due 30 Nov 2026', badge: 'Active' }]) },
+      { label: 'Dependencies', title: 'Dependencies', subtitle: 'What is blocking your tasks.', data: tbl(['Task', 'Blocked by', 'Status'], [['Payment gateway integration', 'API access request', 'Pending']]) }
+    ],
+    profile: [
+      { label: 'Personal Details', page: 'profile-personal' },
+      { label: 'Contact', page: 'profile-contact' },
+      { label: 'Work Details', page: 'profile-work' }
+    ],
+    documents: [
+      { label: 'Company Policies', title: 'Company Policies', subtitle: 'Policies published by HR.', data: cards([{ title: 'Leave Policy 2026', meta: 'PDF · 1.2 MB' }, { title: 'Code of Conduct', meta: 'PDF · 480 KB' }]) },
+      { label: 'SOPs', title: 'SOPs', subtitle: 'Standard operating procedures.', data: cards([{ title: 'Expense reimbursement SOP', meta: 'PDF · 310 KB' }]) },
+      { label: 'Reporting Hierarchy', title: 'Reporting Hierarchy', subtitle: 'Who you report to.', data: tbl(['Name', 'Role'], [['Rohan Mehta', 'Engineering Manager (your manager)'], ['CEO', "Rohan Mehta's manager"]]) }
+    ],
+    requests: [{ label: 'Requests', title: 'Requests', subtitle: 'Requests you have raised with HR.', data: tbl(['Type', 'Date', 'Status'], [['Correction request', '05 Oct 2026', 'Pending'], ['Asset request', '20 Sep 2026', 'Approved']]) }],
+    announcements: [{ label: 'Announcements', title: 'Announcements', subtitle: 'Company announcements.', data: cards([{ title: 'Diwali office closure', meta: '28 Oct 2026', badge: 'Published' }]) }],
+    assets: [{ label: 'Assets', title: 'My Assets', subtitle: 'Assets allocated to you.', data: tbl(['Asset', 'Allocated on', 'Status'], [['MacBook Pro 14"', '14 Jan 2025', 'Active']]) }]
+  };
+}
+
+var HR_TABS, EMP_TABS; // built on init (after DB exists)
+
+/* ============================================================
+   State + top-level navigation
+   ============================================================ */
+var pickedRole = 'hr';
+var hrState = { section: 'home', tab: 0 };
+var empState = { section: 'dashboard', tab: 0 };
+var hrClock = { inAt: null, outAt: null };
+var empClock = { inAt: new Date(DEMO_TODAY.getFullYear(), DEMO_TODAY.getMonth(), DEMO_TODAY.getDate(), 9, 14), outAt: null };
+hrClock.inAt = new Date(DEMO_TODAY.getFullYear(), DEMO_TODAY.getMonth(), DEMO_TODAY.getDate(), 9, 14);
+
+function pickRole(role) {
+  pickedRole = role;
+  byId('roleHr').classList.toggle('roleActive', role === 'hr');
+  byId('roleEmp').classList.toggle('roleActive', role === 'employee');
+}
+function goTo(screen) {
+  document.querySelectorAll('.appScreen').forEach(function (s) { s.classList.remove('active'); });
+  byId('screen-' + screen).classList.add('active');
+  if (screen === 'hr') renderHr();
+  if (screen === 'employee') renderEmp();
+  window.scrollTo(0, 0);
+}
+function selectHrSection(key) {
+  var all = HR_NAV.primary.concat(HR_NAV.more);
+  var sec = all.filter(function (s) { return s.key === key; })[0];
+  if (!sec || !sec.enabled) return;
+  hrState.section = key; hrState.tab = 0; renderHr();
+}
+function selectHrTab(i) { hrState.tab = i; renderHr(); }
+function selectEmpSection(key) {
+  var all = EMP_NAV.primary.concat(EMP_NAV.more);
+  var sec = all.filter(function (s) { return s.key === key; })[0];
+  if (!sec) return;
+  empState.section = key; empState.tab = 0; renderEmp();
+}
+function selectEmpTab(i) { empState.tab = i; renderEmp(); }
+
+/* ============================================================
+   Shell chrome renderers
+   ============================================================ */
+function renderSidebar(nav, activeKey, onClickName) {
+  function item(s) {
+    var cls = 'sidebarItem' + (s.key === activeKey ? ' sidebarItemActive' : '') + (!s.enabled ? ' sidebarItemDisabled' : '');
+    var click = s.enabled ? ' onclick="' + onClickName + '(\'' + s.key + '\')"' : '';
+    return '<button type="button" class="' + cls + '"' + click + '>' + icon(s.icon, 20) + '<span>' + s.label + '</span></button>';
+  }
+  return nav.primary.map(item).join('') + '<div class="sidebarDivider"></div>' + nav.more.map(item).join('');
+}
+function renderSecondaryNav(tabs, activeIdx, onClickName) {
+  if (!tabs || tabs.length <= 1) return '';
+  return tabs.map(function (t, i) {
+    var cls = 'secondaryLink' + (i === activeIdx ? ' secondaryLinkActive' : '');
+    return '<button type="button" class="' + cls + '" onclick="' + onClickName + '(' + i + ')">' + t.label + '</button>';
+  }).join('');
+}
+
+/* ============================================================
+   Global search (topbar)
+   ============================================================ */
+function searchCorpus() {
+  var out = [];
+  DB.employees.forEach(function (e) { out.push({ type: 'Employee', label: e.name + ' · ' + e.dept, go: function () { selectHrSection('employees'); selectEmpNoop(); } }); });
+  DB.projects.forEach(function (p) { out.push({ type: 'Project', label: p.name, go: function () { selectHrSection('work'); } }); });
+  DB.tasks.forEach(function (t) { out.push({ type: 'Task', label: t.title, go: function () { selectHrSection('work'); selectHrTab(1); } }); });
+  DB.announcements.forEach(function (a) { out.push({ type: 'Announcement', label: a.title, go: function () { selectHrSection('announcements'); } , goEmp: function () { selectEmpSection('announcements'); } }); });
+  return out;
+}
+function selectEmpNoop() {}
+var __searchResults = [];
+function doGlobalSearch(scope, q) {
+  var box = byId(scope + 'SearchDropdown');
+  var query = (q || '').trim().toLowerCase();
+  if (!query) { box.classList.remove('open'); box.innerHTML = ''; return; }
+  var matches = searchCorpus().filter(function (m) { return m.label.toLowerCase().indexOf(query) > -1; }).slice(0, 8);
+  __searchResults = matches;
+  box.classList.add('open');
+  box.innerHTML = matches.length
+    ? matches.map(function (m, i) { return '<button type="button" class="searchResultItem" onclick="runSearchResult(' + i + ', \'' + scope + '\')">' + esc(m.label) + '<span class="searchResultType">' + m.type + '</span></button>'; }).join('')
+    : '<div class="searchEmpty">No matches</div>';
+}
+function runSearchResult(i, scope) {
+  var m = __searchResults[i];
+  if (!m) return;
+  if (scope === 'emp' && m.goEmp) m.goEmp(); else if (scope === 'hr') m.go(); else if (m.goEmp) m.goEmp();
+  byId(scope + 'GlobalSearch').value = '';
+  byId(scope + 'SearchDropdown').classList.remove('open');
+}
+
+/* ============================================================
+   HR flagship / interactive pages
+   ============================================================ */
+function fmtTime(d) { return d ? d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''; }
+function fmtWorked(ms) { var m = Math.max(0, Math.floor(ms / 60000)); return Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm'; }
+
+function clockCardHtml(which) {
+  var c = which === 'hr' ? hrClock : empClock;
+  var now = new Date();
+  var status = 'Not clocked in today';
+  if (c.inAt && !c.outAt) status = 'Clocked in at ' + fmtTime(c.inAt);
+  if (c.outAt) status = 'Clocked out at ' + fmtTime(c.outAt);
+  var worked = c.inAt ? fmtWorked((c.outAt || now).getTime() - c.inAt.getTime()) : null;
+  return '<div class="clockCard"><span class="clockIconWrap">' + icon('clock', 18) + '</span>' +
+    '<div class="clockBody"><span class="clockLabel">Attendance today</span><span class="clockStatus">' + status + '</span>' + (worked ? '<span class="clockMeta">Worked ' + worked + '</span>' : '') + '</div>' +
+    '<div class="clockActions">' +
+      '<button class="btnClockIn" onclick="doClock(\'' + which + '\',\'in\')" ' + (c.inAt && !c.outAt ? 'disabled' : '') + '>Clock in</button>' +
+      '<button class="btnClockOut" onclick="doClock(\'' + which + '\',\'out\')" ' + (!c.inAt || c.outAt ? 'disabled' : '') + '>Clock out</button>' +
+    '</div></div>';
+}
+function doClock(which, action) {
+  var c = which === 'hr' ? hrClock : empClock;
+  var now = new Date();
+  if (action === 'in') { c.inAt = now; c.outAt = null; showToast('Clocked in at ' + fmtTime(now)); }
+  else { c.outAt = now; showToast('Clocked out at ' + fmtTime(now)); }
+  if (which === 'hr') renderHr(); else renderEmp();
+}
+
+function statCard(ic, label, value) { return '<div class="statCard"><span class="statIconWrap">' + icon(ic, 18) + '</span><div><div class="statLabel">' + label + '</div><div class="statValue">' + value + '</div></div></div>'; }
+function hbar(label, pct, color, value) { return '<div class="hbar-row"><span class="hbar-label">' + label + '</span><span class="hbar-track"><span class="hbar-fill" style="width:' + pct + '%;background:' + color + '"></span></span><span class="hbar-value">' + value + '</span></div>'; }
+function qa(ic, label, onclick) { return '<div class="quickActionBtn" onclick="' + onclick + '"><span class="qaIcon">' + icon(ic, 16) + '</span>' + label + '</div>'; }
+
+function renderHomeDashboard() {
+  return clockCardHtml('hr') +
+    '<div class="statGrid">' +
+      statCard('users', 'Total employees', DB.employees.length) + statCard('calCheck', 'Present today', '3') +
+      statCard('inbox', 'Pending requests', DB.leaveRequests.filter(function (l) { return l.status === 'Pending'; }).length) +
+      statCard('grid', 'Open tasks', DB.tasks.filter(function (t) { return t.status !== 'Completed'; }).length) +
+      statCard('briefcase', 'Active projects', DB.projects.length) + statCard('users', 'Onboarding', '3') +
+    '</div>' +
+    '<div class="layout2"><div>' +
+      '<div class="chartRow">' +
+        '<div class="sectionCard"><div class="sectionCardHeader"><h3 class="sectionCardTitle">Attendance overview</h3><span class="sectionCardSubtitle">Last 6 months</span></div>' +
+        '<div class="bars">' + [60, 74, 52, 88, 70, 95].map(function (h, i) { return '<div class="bar"><div class="fill" style="height:' + h + 'px"></div><span class="tick">' + ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'][i] + '</span></div>'; }).join('') + '</div>' +
+        '<div class="chipRow"><span class="badge badge-success">Present 86%</span><span class="badge badge-info">WFH 8%</span><span class="badge badge-warning">Late 4%</span><span class="badge badge-danger">Absent 2%</span></div></div>' +
+        '<div class="sectionCard"><div class="sectionCardHeader"><h3 class="sectionCardTitle">Requests by type</h3><span class="sectionCardSubtitle">This month</span></div>' +
+        '<div class="hbars">' + hbar('Leave', 80, '#2a78d6', 18) + hbar('Correction', 45, '#eb6834', 9) + hbar('Asset', 30, '#1baf7a', 6) + hbar('Other', 15, '#eda100', 3) + '</div></div>' +
+      '</div>' +
+      '<div class="sectionCard"><div class="sectionCardHeader"><h3 class="sectionCardTitle">Department overview</h3><span class="sectionCardSubtitle">Click a department to see its roster</span></div>' +
+      tableHtmlFromRows(['Department', 'Headcount'], deptOptions().map(function (d) { return [d, String(DB.employees.filter(function (e) { return e.dept === d; }).length)]; })) +
+      '</div>' +
+    '</div>' +
+    '<div>' +
+      '<div class="sectionCard"><h3 class="sectionCardTitle">Quick actions</h3>' +
+        qa('plus', 'Add employee', "selectHrSection('employees'); openAddEmployee();") +
+        qa('plus', 'New project', "selectHrSection('work'); openAddProject();") +
+        qa('plus', 'Assign task', "selectHrSection('work'); selectHrTab(1); openAddTask();") +
+      '</div>' +
+      '<div class="sectionCard"><h3 class="sectionCardTitle">Recent activity</h3><ul class="list">' +
+        '<li>Priya S. clocked in late<span class="listMeta">2 min ago · Attendance</span></li>' +
+        '<li>Rohan M. approved a leave request<span class="listMeta">18 min ago · Leave</span></li>' +
+        '<li>New task "Q3 report" assigned<span class="listMeta">1 hr ago · Work</span></li>' +
+      '</ul><a class="viewAllLink" onclick="selectHrSection(\'log\')">View all activity →</a></div>' +
+      '<div class="sectionCard"><h3 class="sectionCardTitle">Upcoming birthdays</h3><ul class="list">' +
+        '<li>Aisha Khan<span class="listMeta">Tomorrow · Engineering</span></li><li>Daniel Fernandes<span class="listMeta">in 4 days · Finance</span></li>' +
+      '</ul></div>' +
+    '</div></div>';
+}
+
+/* ---- Employees Directory (search + department filter + add) ---- */
+var empDirFilter = { q: '', dept: '' };
+function employeesTableHtml(rows) {
+  return tableHtmlFromRows(['Name', 'Department', 'Designation', 'Status'], rows.map(function (e) { return [e.name, e.dept, e.designation, e.status]; }));
+}
+function filteredEmployees() {
+  var q = empDirFilter.q.toLowerCase();
+  return DB.employees.filter(function (e) {
+    if (q && e.name.toLowerCase().indexOf(q) === -1) return false;
+    if (empDirFilter.dept && e.dept !== empDirFilter.dept) return false;
+    return true;
+  });
+}
+function refreshEmployeesDirectory() { byId('employeesDirectoryResults').innerHTML = employeesTableHtml(filteredEmployees()); }
+function openAddEmployee() {
+  selectHrSection('employees'); selectHrTab(0);
+  var f = byId('addEmployeeForm');
+  if (f) f.style.display = 'block';
+}
+function addEmployeeSubmit() {
+  var name = byId('neName').value.trim();
+  var dept = byId('neDept').value.trim();
+  var designation = byId('neDesig').value.trim();
+  if (!name || !dept || !designation) { showToast('Fill in name, department, and designation.'); return; }
+  DB.employees.push({ id: 'e' + (DB.employees.length + 1), name: name, dept: dept, designation: designation, status: 'Active',
+    dob: '', gender: '', marital: '', phone: '', personalEmail: '', currentAddr: '', permAddr: '', emName: '', emRel: '', emPhone: '', manager: '', joined: '', skills: [] });
+  byId('addEmployeeForm').style.display = 'none';
+  renderHr();
+  showToast('Added ' + name + '.');
+}
+function renderEmployeesDirectory() {
+  var depts = deptOptions();
+  return '<div class="filterBar">' +
+    '<input class="searchInput" placeholder="Search employee..." value="' + esc(empDirFilter.q) + '" oninput="empDirFilter.q=this.value; refreshEmployeesDirectory();" />' +
+    '<select class="filterSelect" onchange="empDirFilter.dept=this.value; refreshEmployeesDirectory();">' +
+      '<option value="">All departments</option>' + depts.map(function (d) { return '<option' + (d === empDirFilter.dept ? ' selected' : '') + '>' + d + '</option>'; }).join('') +
+    '</select>' +
+    '<button type="button" class="addBtn" onclick="var f=byId(\'addEmployeeForm\'); f.style.display = f.style.display===\'block\'?\'none\':\'block\';">+ Add employee</button>' +
+    '</div>' +
+    '<div class="inlineForm" id="addEmployeeForm" style="display:none;">' +
+      '<div class="formGrid">' +
+        '<label>Name<input id="neName" placeholder="Full name" /></label>' +
+        '<label>Department<input id="neDept" placeholder="e.g. Engineering" /></label>' +
+        '<label>Designation<input id="neDesig" placeholder="e.g. Software Engineer" /></label>' +
+      '</div>' +
+      '<div class="formActions"><button type="button" class="addBtn" onclick="addEmployeeSubmit()">Save employee</button>' +
+      '<button type="button" class="clearBtn" onclick="byId(\'addEmployeeForm\').style.display=\'none\';">Cancel</button></div>' +
+    '</div>' +
+    '<div id="employeesDirectoryResults">' + employeesTableHtml(filteredEmployees()) + '</div>';
+}
+
+/* ---- Leave Requests (search + status filter + approve/reject) ---- */
+var leaveReqFilter = { q: '', status: '' };
+function leaveRequestsTableHtml(rows) {
+  var cols = ['Employee', 'Category', 'From', 'To', 'Days', 'Status', 'Actions'];
+  if (rows.length === 0) return tableHtmlFromRows(cols, []);
+  var body = rows.map(function (l) {
+    var actions = l.status === 'Pending'
+      ? '<button class="actionBtn approve" onclick="decideLeave(\'' + l.id + '\',\'Approved\')">Approve</button><button class="actionBtn reject" onclick="decideLeave(\'' + l.id + '\',\'Rejected\')">Reject</button>'
+      : '<span style="color:var(--color-text-muted);font-size:12px;">Decided</span>';
+    return '<tr><td>' + esc(l.employee) + '</td><td>' + esc(l.category) + '</td><td>' + esc(l.from) + '</td><td>' + esc(l.to) + '</td><td>' + l.days + '</td>' +
+      '<td><span class="badge ' + badgeClass(l.status) + '">' + l.status + '</span></td><td>' + actions + '</td></tr>';
+  }).join('');
+  return '<div class="tableWrap"><table class="simpleTable"><thead><tr>' + cols.map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+}
+function filteredLeaveRequests() {
+  var q = leaveReqFilter.q.toLowerCase();
+  return DB.leaveRequests.filter(function (l) {
+    if (q && l.employee.toLowerCase().indexOf(q) === -1) return false;
+    if (leaveReqFilter.status && l.status !== leaveReqFilter.status) return false;
+    return true;
+  });
+}
+function refreshLeaveRequests() { byId('leaveRequestsResults').innerHTML = leaveRequestsTableHtml(filteredLeaveRequests()); }
+function decideLeave(id, status) {
+  var l = DB.leaveRequests.filter(function (x) { return x.id === id; })[0];
+  if (!l) return;
+  l.status = status;
+  refreshLeaveRequests();
+  showToast(l.employee + "'s request " + status.toLowerCase() + '.');
+}
+function renderLeaveRequests() {
+  return '<div class="filterBar">' +
+    '<input class="searchInput" placeholder="Search employee..." value="' + esc(leaveReqFilter.q) + '" oninput="leaveReqFilter.q=this.value; refreshLeaveRequests();" />' +
+    '<select class="filterSelect" onchange="leaveReqFilter.status=this.value; refreshLeaveRequests();">' +
+      '<option value="">All statuses</option><option' + (leaveReqFilter.status === 'Pending' ? ' selected' : '') + '>Pending</option>' +
+      '<option' + (leaveReqFilter.status === 'Approved' ? ' selected' : '') + '>Approved</option><option' + (leaveReqFilter.status === 'Rejected' ? ' selected' : '') + '>Rejected</option>' +
+    '</select></div>' +
+    '<div id="leaveRequestsResults">' + leaveRequestsTableHtml(filteredLeaveRequests()) + '</div>';
+}
+
+/* ---- Leave Calendar (prev/next through seeded months) ---- */
+var CAL_MONTHS = [
+  { label: 'September 2026', leading: 2, days: 30, today: null, leaves: { 3: [{ n: 'PS', s: 'success' }] } },
+  { label: 'October 2026', leading: 4, days: 31, today: 9, leaves: { 9: [{ n: 'DF', s: 'warning' }], 12: [{ n: 'DF', s: 'warning' }, { n: 'PS', s: 'success' }], 20: [{ n: 'AK', s: 'success' }] } },
+  { label: 'November 2026', leading: 0, days: 30, today: null, leaves: { 5: [{ n: 'RM', s: 'success' }] } }
+];
+var calIdx = 1;
+function calendarGridHtml(m) {
+  var cells = '';
+  for (var i = 0; i < m.leading; i++) cells += '<div class="dayCell blank"></div>';
+  for (var d = 1; d <= m.days; d++) {
+    var dow = (m.leading + d - 1) % 7;
+    var isWeekend = dow === 0 || dow === 6;
+    var isToday = d === m.today;
+    var cls = 'dayCell' + (isToday ? ' today' : isWeekend ? ' weekend' : '');
+    var chips = (m.leaves[d] || []).map(function (c) { return '<span class="dayChip badge-' + c.s + '">' + c.n + '</span>'; }).join('');
+    cells += '<div class="' + cls + '"><span class="dayNum' + (isToday ? ' todayNum' : '') + '">' + d + '</span><div class="dayChips">' + chips + '</div></div>';
+  }
+  var weekdays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(function (w) { return '<span class="weekday">' + w + '</span>'; }).join('');
+  return weekdays + cells;
+}
+function refreshCalendar() {
+  byId('calMonthLabel').textContent = CAL_MONTHS[calIdx].label;
+  byId('calGrid').innerHTML = calendarGridHtml(CAL_MONTHS[calIdx]);
+  byId('calPrevBtn').disabled = calIdx === 0;
+  byId('calNextBtn').disabled = calIdx === CAL_MONTHS.length - 1;
+}
+function calPrev() { if (calIdx > 0) { calIdx--; refreshCalendar(); } }
+function calNext() { if (calIdx < CAL_MONTHS.length - 1) { calIdx++; refreshCalendar(); } }
+function renderLeaveCalendar() {
+  var m = CAL_MONTHS[calIdx];
+  return '<div class="calendarCard"><div class="calendarHeader"><span class="monthLabel" id="calMonthLabel">' + m.label + '</span>' +
+    '<div style="display:flex;gap:8px;"><button class="navBtn" id="calPrevBtn" onclick="calPrev()" ' + (calIdx === 0 ? 'disabled' : '') + '>' + icon('chevLeft', 15) + '</button>' +
+    '<button class="navBtn" id="calNextBtn" onclick="calNext()" ' + (calIdx === CAL_MONTHS.length - 1 ? 'disabled' : '') + '>' + icon('chevRight', 15) + '</button></div></div>' +
+    '<div class="calGrid" id="calGrid">' + calendarGridHtml(m) + '</div>' +
+    '<div class="legend"><span class="legendItem"><span class="legendSwatch" style="background:var(--color-success)"></span>Approved</span>' +
+    '<span class="legendItem"><span class="legendSwatch" style="background:var(--color-warning)"></span>Pending</span></div></div>';
+}
+
+/* ---- Leave Policy (live expiry compute) ---- */
+var leavePolicy = { month: 6, day: 1 };
+function computeExpiry(monthIdx, day) {
+  var now = DEMO_TODAY;
+  var start = new Date(now.getFullYear(), monthIdx, day);
+  if (start.getTime() > now.getTime()) start = new Date(now.getFullYear() - 1, monthIdx, day);
+  var end = new Date(start.getFullYear() + 1, start.getMonth(), start.getDate());
+  return end.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+function refreshLeavePolicyNote() {
+  byId('leavePolicyNote').innerHTML = 'Unused leave for the current cycle expires on <strong>' + computeExpiry(leavePolicy.month, leavePolicy.day) + '</strong> - balances reset the next day.';
+}
+function renderLeavePolicy() {
+  var months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  return '<div class="formCard">' +
+    '<div class="formField"><span>Leave year starts on</span><div style="display:flex;gap:8px;">' +
+    '<select onchange="leavePolicy.month=Number(this.value); refreshLeavePolicyNote();">' + months.map(function (m, i) { return '<option value="' + i + '"' + (i === leavePolicy.month ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select>' +
+    '<select onchange="leavePolicy.day=Number(this.value); refreshLeavePolicyNote();">' + range(1, 31).map(function (d) { return '<option' + (d === leavePolicy.day ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select>' +
+    '</div></div>' +
+    '<p class="formHint">E.g. 1 July means the leave year runs 1 July → 30 June, and every balance resets on that date.</p>' +
+    '<p class="formNote" id="leavePolicyNote">Unused leave for the current cycle expires on <strong>' + computeExpiry(leavePolicy.month, leavePolicy.day) + '</strong> - balances reset the next day.</p>' +
+    '<button type="button" class="saveBtn" onclick="showToast(\'Leave policy saved.\')">Save</button>' +
+    '</div>';
+}
+
+/* ---- Work & Projects ---- */
+function isOverdue(t) { return t.status !== 'Completed' && new Date(t.deadline) < DEMO_TODAY; }
+function projectStatusOf(p) {
+  var pt = DB.tasks.filter(function (t) { return t.projectId === p.id; });
+  if (pt.length === 0) return 'Upcoming';
+  if (pt.every(function (t) { return t.status === 'Completed'; })) return 'Completed';
+  if (pt.some(function (t) { return isOverdue(t); })) return 'Delayed';
+  return 'Active';
+}
+var workProjFilter = { q: '', dept: '', status: '' };
+function projectsTableHtml(rows) {
+  return tableHtmlFromRows(['Project', 'Department', 'Members', 'Deadline', 'Status'],
+    rows.map(function (p) { return [p.name, p.dept, p.members || '-', p.deadline || '-', projectStatusOf(p)]; }));
+}
+function refreshProjects() {
+  var q = workProjFilter.q.toLowerCase();
+  var rows = DB.projects.filter(function (p) {
+    if (q && p.name.toLowerCase().indexOf(q) === -1) return false;
+    if (workProjFilter.dept && p.dept !== workProjFilter.dept) return false;
+    if (workProjFilter.status && projectStatusOf(p) !== workProjFilter.status) return false;
+    return true;
+  });
+  byId('projectsResults').innerHTML = projectsTableHtml(rows);
+}
+function openAddProject() { selectHrSection('work'); selectHrTab(0); var f = byId('addProjectForm'); if (f) f.style.display = 'block'; }
+function addProjectSubmit() {
+  var name = byId('npName').value.trim(); var dept = byId('npDept').value.trim(); var deadline = byId('npDeadline').value;
+  if (!name || !dept) { showToast('Fill in a project name and department.'); return; }
+  DB.projects.push({ id: 'p' + (DB.projects.length + 1), name: name, dept: dept, members: '', deadline: deadline || '' });
+  byId('addProjectForm').style.display = 'none';
+  renderHr();
+  showToast('Added project "' + name + '".');
+}
+function renderWorkProjects() {
+  var depts = deptOptions();
+  return '<div class="filterBar">' +
+    '<input class="searchInput" placeholder="Search projects..." value="' + esc(workProjFilter.q) + '" oninput="workProjFilter.q=this.value; refreshProjects();" />' +
+    '<select class="filterSelect" onchange="workProjFilter.dept=this.value; refreshProjects();"><option value="">All departments</option>' + depts.map(function (d) { return '<option' + (d === workProjFilter.dept ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select>' +
+    '<select class="filterSelect" onchange="workProjFilter.status=this.value; refreshProjects();"><option value="">All statuses</option>' + ['Active', 'Upcoming', 'Delayed', 'Completed'].map(function (s) { return '<option' + (s === workProjFilter.status ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select>' +
+    '<button type="button" class="addBtn" onclick="var f=byId(\'addProjectForm\'); f.style.display=f.style.display===\'block\'?\'none\':\'block\';">+ Add project</button>' +
+    '</div>' +
+    '<div class="inlineForm" id="addProjectForm" style="display:none;"><div class="formGrid">' +
+      '<label>Project name<input id="npName" /></label><label>Department<input id="npDept" /></label><label>Deadline<input id="npDeadline" type="date" /></label>' +
+    '</div><div class="formActions"><button type="button" class="addBtn" onclick="addProjectSubmit()">Save project</button><button type="button" class="clearBtn" onclick="byId(\'addProjectForm\').style.display=\'none\';">Cancel</button></div></div>' +
+    '<div id="projectsResults">' + projectsTableHtml(DB.projects) + '</div>';
+}
+
+var workTaskFilter = { q: '', project: '', status: '' };
+function tasksTableHtml(rows) {
+  var cols = ['Task', 'Project', 'Assignees', 'Deadline', 'Status'];
+  var body = rows.map(function (t) {
+    var proj = DB.projects.filter(function (p) { return p.id === t.projectId; })[0];
+    var status = isOverdue(t) ? 'Overdue' : t.status;
+    return '<tr><td>' + esc(t.title) + '</td><td>' + esc(proj ? proj.name : '-') + '</td><td>' + esc(t.assignees) + '</td><td>' + esc(t.deadline) + '</td>' +
+      '<td><select onchange="setTaskStatus(\'' + t.id + '\', this.value)" style="font-size:12px;padding:4px 6px;border-radius:6px;border:1px solid var(--color-border);">' +
+      ['Pending', 'Ongoing', 'Completed'].map(function (s) { return '<option' + (s === t.status ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select> ' +
+      '<span class="badge ' + badgeClass(status) + '" style="margin-left:6px;">' + status + '</span></td></tr>';
+  }).join('');
+  return '<div class="tableWrap"><table class="simpleTable"><thead><tr>' + cols.map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>' + (rows.length ? body : '<tr><td colspan="5" class="emptyHint">No matching tasks.</td></tr>') + '</tbody></table></div>';
+}
+function setTaskStatus(id, status) {
+  var t = DB.tasks.filter(function (x) { return x.id === id; })[0];
+  if (!t) return;
+  t.status = status;
+  refreshTasks();
+  showToast('Task status updated to ' + status + '.');
+}
+function refreshTasks() {
+  var q = workTaskFilter.q.toLowerCase();
+  var rows = DB.tasks.filter(function (t) {
+    if (q && t.title.toLowerCase().indexOf(q) === -1) return false;
+    if (workTaskFilter.project && t.projectId !== workTaskFilter.project) return false;
+    if (workTaskFilter.status && (isOverdue(t) ? 'Overdue' : t.status) !== workTaskFilter.status) return false;
+    return true;
+  });
+  byId('tasksResults').innerHTML = tasksTableHtml(rows);
+}
+function openAddTask() { selectHrSection('work'); selectHrTab(1); var f = byId('addTaskForm'); if (f) f.style.display = 'block'; }
+function addTaskSubmit() {
+  var title = byId('ntTitle').value.trim(); var projectId = byId('ntProject').value; var deadline = byId('ntDeadline').value;
+  if (!title || !projectId) { showToast('Fill in a task title and pick a project.'); return; }
+  DB.tasks.push({ id: 't' + (DB.tasks.length + 1), title: title, projectId: projectId, assignees: '', deadline: deadline || '', status: 'Pending' });
+  byId('addTaskForm').style.display = 'none';
+  renderHr();
+  showToast('Added task "' + title + '".');
+}
+function renderWorkTasks() {
+  return '<div class="filterBar">' +
+    '<input class="searchInput" placeholder="Search tasks..." value="' + esc(workTaskFilter.q) + '" oninput="workTaskFilter.q=this.value; refreshTasks();" />' +
+    '<select class="filterSelect" onchange="workTaskFilter.project=this.value; refreshTasks();"><option value="">All projects</option>' + DB.projects.map(function (p) { return '<option value="' + p.id + '"' + (p.id === workTaskFilter.project ? ' selected' : '') + '>' + p.name + '</option>'; }).join('') + '</select>' +
+    '<select class="filterSelect" onchange="workTaskFilter.status=this.value; refreshTasks();"><option value="">All statuses</option>' + ['Pending', 'Ongoing', 'Completed', 'Overdue'].map(function (s) { return '<option' + (s === workTaskFilter.status ? ' selected' : '') + '>' + s + '</option>'; }).join('') + '</select>' +
+    '<button type="button" class="addBtn" onclick="var f=byId(\'addTaskForm\'); f.style.display=f.style.display===\'block\'?\'none\':\'block\';">+ Add task</button>' +
+    '</div>' +
+    '<div class="inlineForm" id="addTaskForm" style="display:none;"><div class="formGrid">' +
+      '<label>Task title<input id="ntTitle" /></label>' +
+      '<label>Project<select id="ntProject">' + DB.projects.map(function (p) { return '<option value="' + p.id + '">' + p.name + '</option>'; }).join('') + '</select></label>' +
+      '<label>Deadline<input id="ntDeadline" type="date" /></label>' +
+    '</div><div class="formActions"><button type="button" class="addBtn" onclick="addTaskSubmit()">Save task</button><button type="button" class="clearBtn" onclick="byId(\'addTaskForm\').style.display=\'none\';">Cancel</button></div></div>' +
+    '<div id="tasksResults">' + tasksTableHtml(DB.tasks) + '</div>';
+}
+
+var workloadFilter = { q: '', dept: '' };
+function workloadRows() {
+  return DB.employees.map(function (e) {
+    var mine = DB.tasks.filter(function (t) { return t.assignees.indexOf(e.name) > -1; });
+    return [e.name, e.dept, String(mine.length), String(mine.filter(function (t) { return isOverdue(t); }).length)];
+  });
+}
+function refreshWorkload() {
+  var q = workloadFilter.q.toLowerCase();
+  var rows = workloadRows().filter(function (r) {
+    if (q && r[0].toLowerCase().indexOf(q) === -1) return false;
+    if (workloadFilter.dept && r[1] !== workloadFilter.dept) return false;
+    return true;
+  });
+  byId('workloadResults').innerHTML = tableHtmlFromRows(['Employee', 'Department', 'Total tasks', 'Overdue'], rows);
+}
+function renderWorkload() {
+  var depts = deptOptions();
+  return '<div class="filterBar">' +
+    '<input class="searchInput" placeholder="Search employee..." value="' + esc(workloadFilter.q) + '" oninput="workloadFilter.q=this.value; refreshWorkload();" />' +
+    '<select class="filterSelect" onchange="workloadFilter.dept=this.value; refreshWorkload();"><option value="">All departments</option>' + depts.map(function (d) { return '<option' + (d === workloadFilter.dept ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select>' +
+    '</div><div id="workloadResults">' + tableHtmlFromRows(['Employee', 'Department', 'Total tasks', 'Overdue'], workloadRows()) + '</div>';
+}
+
+/* ---- Announcements (status tabs + search + add) ---- */
+var annFilter = { q: '' };
+function announcementsCardsHtml(status) {
+  var items = DB.announcements.filter(function (a) { return !status || a.status === status; })
+    .filter(function (a) { return !annFilter.q || a.title.toLowerCase().indexOf(annFilter.q.toLowerCase()) > -1; })
+    .map(function (a) { return { title: a.title, meta: a.date || 'Not scheduled', badge: a.status }; });
+  return cardsHtmlFromItems(items);
+}
+function refreshAnnouncements(status) { byId('announcementsResults').innerHTML = announcementsCardsHtml(status); }
+function addAnnouncementSubmit(status) {
+  var title = byId('naTitle').value.trim(); var date = byId('naDate').value;
+  if (!title) { showToast('Give the announcement a title.'); return; }
+  DB.announcements.push({ id: 'a' + (DB.announcements.length + 1), title: title, date: date || '', status: 'Draft' });
+  byId('addAnnouncementForm').style.display = 'none';
+  refreshAnnouncements(status);
+  showToast('Added announcement (draft).');
+}
+function renderAnnouncements(status) {
+  return '<div class="filterBar">' +
+    '<input class="searchInput" placeholder="Search announcements..." value="' + esc(annFilter.q) + '" oninput="annFilter.q=this.value; refreshAnnouncements(\'' + status + '\');" />' +
+    '<button type="button" class="addBtn" onclick="var f=byId(\'addAnnouncementForm\'); f.style.display=f.style.display===\'block\'?\'none\':\'block\';">+ New announcement</button>' +
+    '</div>' +
+    '<div class="inlineForm" id="addAnnouncementForm" style="display:none;"><div class="formGrid">' +
+      '<label>Title<input id="naTitle" /></label><label>Date<input id="naDate" type="date" /></label>' +
+    '</div><div class="formActions"><button type="button" class="addBtn" onclick="addAnnouncementSubmit(\'' + status + '\')">Save as draft</button><button type="button" class="clearBtn" onclick="byId(\'addAnnouncementForm\').style.display=\'none\';">Cancel</button></div></div>' +
+    '<div id="announcementsResults">' + announcementsCardsHtml(status) + '</div>';
+}
+
+/* ============================================================
+   Employee flagship / interactive pages
+   ============================================================ */
+function renderEmployeeDashboard() {
+  return clockCardHtml('emp') +
+    '<div class="statGrid">' + statCard('calDot', 'Leave balance', '19 days') + statCard('briefcase', 'Open tasks', '4') + statCard('megaphone', 'Announcements', DB.announcements.length) + '</div>' +
+    '<div class="layout2"><div><div class="sectionCard"><h3 class="sectionCardTitle">My tasks</h3>' +
+      tableHtmlFromRows(['Task', 'Project', 'Deadline', 'Status'], [['Payment gateway integration', 'Checkout redesign', '18 Oct 2026', 'Ongoing'], ['Write test cases', 'Checkout redesign', '12 Oct 2026', 'Pending']]) +
+      '</div></div><div>' +
+      '<div class="sectionCard"><h3 class="sectionCardTitle">Announcements</h3><ul class="list">' + DB.announcements.filter(function (a) { return a.status === 'Published'; }).map(function (a) { return '<li>' + esc(a.title) + '<span class="listMeta">' + esc(a.date) + '</span></li>'; }).join('') + '</ul></div>' +
+      '<div class="sectionCard"><h3 class="sectionCardTitle">Upcoming holidays</h3><ul class="list"><li>Diwali<span class="listMeta">28 Oct 2026</span></li></ul></div>' +
+    '</div></div>';
+}
+
+var ME_ID = 'e1'; // "Aisha Khan" is the signed-in employee throughout this preview
+function me() { return DB.employees.filter(function (e) { return e.id === ME_ID; })[0]; }
+function profileHeaderHtml() {
+  var p = me();
+  return '<div class="profileHeader"><span class="profileAvatar">' + p.name.split(' ').map(function (n) { return n[0]; }).join('') + '</span>' +
+    '<div class="profileBody"><div class="profileNameRow"><h2 class="profileName">' + esc(p.name) + '</h2><span class="badge badge-success">' + p.status + '</span></div>' +
+    '<span class="profileSubline">' + esc(p.designation) + ' · ' + esc(p.dept) + ' · Reports to ' + esc(p.manager) + '</span></div></div>';
+}
+function profileTabsHtml(active) {
+  var tabs = ['Personal details', 'Contact', 'Work details'];
+  return '<div style="display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--color-border);">' +
+    tabs.map(function (t, i) { return '<span style="padding:10px 4px;font-size:13px;font-weight:' + (i === active ? '600' : '500') + ';color:' + (i === active ? 'var(--color-primary)' : 'var(--color-text-muted)') + ';border-bottom:2px solid ' + (i === active ? 'var(--color-primary)' : 'transparent') + ';margin-right:20px;">' + t + '</span>'; }).join('') +
+    '</div>';
+}
+var profilePersonalEditing = false;
+var profileContactEditing = false;
+
+function renderProfilePersonal() {
+  var p = me();
+  var body;
+  if (profilePersonalEditing) {
+    body = '<div class="formGrid">' +
+      '<label>Date of birth<input id="pfDob" type="date" value="' + esc(p.dob) + '" /></label>' +
+      '<label>Gender<input id="pfGender" value="' + esc(p.gender) + '" /></label>' +
+      '<label>Marital status<input id="pfMarital" value="' + esc(p.marital) + '" /></label>' +
+      '</div><div class="formActions"><button type="button" class="editBtn" onclick="savePersonal()">Save changes</button>' +
+      '<button type="button" class="cancelBtn" onclick="profilePersonalEditing=false; renderEmp();">Cancel</button></div>';
+  } else {
+    body = '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button class="editBtn" onclick="profilePersonalEditing=true; renderEmp();">' + icon('pencil', 13) + ' Edit</button></div>' +
+      '<div class="factGrid">' +
+        '<div class="fact"><span class="factLabel">Date of birth</span><span class="factValue">' + esc(p.dob || '-') + '</span></div>' +
+        '<div class="fact"><span class="factLabel">Gender</span><span class="factValue">' + esc(p.gender || '-') + '</span></div>' +
+        '<div class="fact"><span class="factLabel">Marital status</span><span class="factValue">' + esc(p.marital || '-') + '</span></div>' +
+      '</div>';
+  }
+  return profileHeaderHtml() + '<div class="sectionCard">' + profileTabsHtml(0) + body + '</div>';
+}
+function savePersonal() {
+  var p = me();
+  p.dob = byId('pfDob').value; p.gender = byId('pfGender').value; p.marital = byId('pfMarital').value;
+  profilePersonalEditing = false;
+  renderEmp();
+  byId('profileAlertText').textContent = 'Your profile has been updated. HR will be notified about the changes you made.';
+  byId('profileAlert').classList.add('open');
+}
+function renderProfileContact() {
+  var p = me();
+  var body;
+  if (profileContactEditing) {
+    body = '<div class="formGrid">' +
+      '<label>Phone<input id="pfPhone" value="' + esc(p.phone) + '" /></label>' +
+      '<label>Personal email<input id="pfEmail" value="' + esc(p.personalEmail) + '" /></label>' +
+      '<label>Current address<input id="pfCurAddr" value="' + esc(p.currentAddr) + '" /></label>' +
+      '<label>Permanent address<input id="pfPermAddr" value="' + esc(p.permAddr) + '" /></label>' +
+      '<label>Emergency contact<input id="pfEmName" value="' + esc(p.emName) + '" /></label>' +
+      '<label>Relation<input id="pfEmRel" value="' + esc(p.emRel) + '" /></label>' +
+      '<label>Emergency phone<input id="pfEmPhone" value="' + esc(p.emPhone) + '" /></label>' +
+      '</div><div class="formActions"><button type="button" class="editBtn" onclick="saveContact()">Save changes</button>' +
+      '<button type="button" class="cancelBtn" onclick="profileContactEditing=false; renderEmp();">Cancel</button></div>';
+  } else {
+    body = '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button class="editBtn" onclick="profileContactEditing=true; renderEmp();">' + icon('pencil', 13) + ' Edit</button></div>' +
+      '<div class="factGrid">' +
+        '<div class="fact"><span class="factLabel">Phone</span><span class="factValue">' + esc(p.phone || '-') + '</span></div>' +
+        '<div class="fact"><span class="factLabel">Personal email</span><span class="factValue">' + esc(p.personalEmail || '-') + '</span></div>' +
+        '<div class="fact"><span class="factLabel">Current address</span><span class="factValue">' + esc(p.currentAddr || '-') + '</span></div>' +
+        '<div class="fact"><span class="factLabel">Permanent address</span><span class="factValue">' + esc(p.permAddr || '-') + '</span></div>' +
+        '<div class="fact"><span class="factLabel">Emergency contact</span><span class="factValue">' + esc(p.emName || '-') + '</span></div>' +
+        '<div class="fact"><span class="factLabel">Relation / phone</span><span class="factValue">' + esc(p.emRel || '-') + ' · ' + esc(p.emPhone || '-') + '</span></div>' +
+      '</div>';
+  }
+  return profileHeaderHtml() + '<div class="sectionCard">' + profileTabsHtml(1) + body + '</div>';
+}
+function saveContact() {
+  var p = me();
+  p.phone = byId('pfPhone').value; p.personalEmail = byId('pfEmail').value; p.currentAddr = byId('pfCurAddr').value;
+  p.permAddr = byId('pfPermAddr').value; p.emName = byId('pfEmName').value; p.emRel = byId('pfEmRel').value; p.emPhone = byId('pfEmPhone').value;
+  profileContactEditing = false;
+  renderEmp();
+  byId('profileAlertText').textContent = 'Your profile has been updated. HR will be notified about the changes you made.';
+  byId('profileAlert').classList.add('open');
+}
+function renderProfileWork() {
+  var p = me();
+  return profileHeaderHtml() + '<div class="sectionCard">' + profileTabsHtml(2) +
+    '<p style="font-size:11px;color:var(--color-text-muted);margin:0 0 12px;">Employment details are set by HR/Manager and read-only here.</p>' +
+    '<div class="factGrid">' +
+      '<div class="fact"><span class="factLabel">Department</span><span class="factValue">' + esc(p.dept) + '</span></div>' +
+      '<div class="fact"><span class="factLabel">Designation</span><span class="factValue">' + esc(p.designation) + '</span></div>' +
+      '<div class="fact"><span class="factLabel">Manager</span><span class="factValue">' + esc(p.manager) + '</span></div>' +
+      '<div class="fact"><span class="factLabel">Joined</span><span class="factValue">' + esc(p.joined) + '</span></div>' +
+    '</div><h4 class="genericCardTitle" style="margin-top:16px;">Skills</h4>' +
+    '<div class="chipRow">' + p.skills.map(function (s) { return '<span class="badge badge-info">' + esc(s) + '</span>'; }).join('') + '</div></div>';
+}
+
+/* ---- Apply Leave (employee form that actually submits) ---- */
+function submitLeaveApplication() {
+  var category = byId('alCategory').value; var from = byId('alFrom').value; var to = byId('alTo').value;
+  if (!from || !to) { showToast('Pick a start and end date.'); return; }
+  var days = Math.max(1, Math.round((new Date(to) - new Date(from)) / 86400000) + 1);
+  DB.leaveRequests.push({ id: 'l' + (DB.leaveRequests.length + 1), employee: me().name, category: category, from: from, to: to, days: days, status: 'Pending' });
+  byId('applyLeaveNote').textContent = 'Request submitted for ' + days + ' day(s) - awaiting manager approval.';
+  showToast('Leave request submitted.');
+}
+function renderApplyLeave() {
+  return '<div class="formCard">' +
+    '<div class="formField"><span>Category</span><select id="alCategory"><option>Casual Leave</option><option>Sick Leave</option><option>Earned Leave</option></select></div>' +
+    '<div class="formField"><span>From</span><input id="alFrom" type="date" /></div>' +
+    '<div class="formField"><span>To</span><input id="alTo" type="date" /></div>' +
+    '<div class="formField"><span>Reason</span><textarea id="alReason" rows="3"></textarea></div>' +
+    '<button type="button" class="saveBtn" onclick="submitLeaveApplication()">Submit request</button>' +
+    '<p class="savedNote" id="applyLeaveNote"></p>' +
+    '</div>';
+}
+
+/* ============================================================
+   Main render loop
+   ============================================================ */
+function renderHr() {
+  byId('hrSidebar').innerHTML = renderSidebar(HR_NAV, hrState.section, 'selectHrSection');
+  var tabs = HR_TABS[hrState.section] || [];
+  byId('hrSecondaryNav').innerHTML = renderSecondaryNav(tabs, hrState.tab, 'selectHrTab');
+  var tab = tabs[hrState.tab] || tabs[0];
+  var body, title, subtitle;
+  if (!tab) { body = renderComingSoon(); title = ''; subtitle = ''; }
+  else if (tab.page === 'home-dashboard') { body = renderHomeDashboard(); title = 'Home'; subtitle = 'Company-wide attendance, requests, projects, and task activity.'; }
+  else if (tab.page === 'employees-directory') { body = renderEmployeesDirectory(); title = 'Employee Directory'; subtitle = 'Search, filter, and add employees.'; }
+  else if (tab.page === 'leave-requests') { body = renderLeaveRequests(); title = 'Leave Requests'; subtitle = 'Approve or reject pending requests.'; }
+  else if (tab.page === 'leave-calendar') { body = renderLeaveCalendar(); title = 'Leave Calendar'; subtitle = "Who's on approved or pending leave, by day."; }
+  else if (tab.page === 'leave-policy') { body = renderLeavePolicy(); title = 'Leave Policy'; subtitle = "The leave year used to calculate every employee's balance."; }
+  else if (tab.page === 'work-projects') { body = renderWorkProjects(); title = 'Projects'; subtitle = 'Assign a department and people to each project.'; }
+  else if (tab.page === 'work-tasks') { body = renderWorkTasks(); title = 'Tasks'; subtitle = 'Assign tasks with deadlines and track status.'; }
+  else if (tab.page === 'work-workload') { body = renderWorkload(); title = 'Workload'; subtitle = 'How many active tasks each person is juggling.'; }
+  else if (tab.page === 'announcements') { body = renderAnnouncements(tab.status); title = 'Announcements' + (tab.status ? ' · ' + tab.label : ''); subtitle = 'Company announcements.'; }
+  else { body = renderBody(tab); title = tab.title || tab.label; subtitle = tab.subtitle || ''; }
+  byId('hrMain').innerHTML = '<div class="pageHeader"><h1 class="pageTitle">' + title + '</h1><p class="pageSubtitle">' + subtitle + '</p></div>' + body;
+}
+
+function renderEmp() {
+  byId('empSidebar').innerHTML = renderSidebar(EMP_NAV, empState.section, 'selectEmpSection');
+  var tabs = EMP_TABS[empState.section] || [];
+  byId('empSecondaryNav').innerHTML = renderSecondaryNav(tabs, empState.tab, 'selectEmpTab');
+  var tab = tabs[empState.tab] || tabs[0];
+  var body, title, subtitle;
+  if (!tab) { body = renderComingSoon(); title = ''; subtitle = ''; }
+  else if (tab.page === 'employee-dashboard') { body = renderEmployeeDashboard(); title = 'Dashboard'; subtitle = 'Your attendance, tasks, and announcements at a glance.'; }
+  else if (tab.page === 'profile-personal') { body = renderProfilePersonal(); title = 'My Profile'; subtitle = 'Your name and personal details.'; }
+  else if (tab.page === 'profile-contact') { body = renderProfileContact(); title = 'My Profile'; subtitle = 'Phone, email, address, emergency contact.'; }
+  else if (tab.page === 'profile-work') { body = renderProfileWork(); title = 'My Profile'; subtitle = 'Your employment details (HR/Manager managed).'; }
+  else if (tab.page === 'apply-leave') { body = renderApplyLeave(); title = 'Apply Leave'; subtitle = 'Submit a new leave request.'; }
+  else { body = renderBody(tab); title = tab.title || tab.label; subtitle = tab.subtitle || ''; }
+  byId('empMain').innerHTML = '<div class="pageHeader"><h1 class="pageTitle">' + title + '</h1><p class="pageSubtitle">' + subtitle + '</p></div>' + body;
+}
+
+/* close search dropdowns on outside click */
+document.addEventListener('click', function (e) {
+  ['hr', 'emp'].forEach(function (scope) {
+    var wrap = byId(scope + 'GlobalSearch');
+    if (wrap && !wrap.parentNode.contains(e.target)) byId(scope + 'SearchDropdown').classList.remove('open');
+  });
+});
+
+/* init */
+HR_TABS = hrTabs();
+EMP_TABS = empTabs();
+renderHr();
+renderEmp();
+
+</script>
+</body>
+</html>

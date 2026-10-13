@@ -1,0 +1,297 @@
+.shell {
+  /* Match the Super Admin portal's green/teal identity: force the same
+     light teal-tinted theme here regardless of system dark mode, and
+     repoint the generic primary/info tokens at the HR teal palette so
+     every button, badge and link in this module turns teal instead of
+     purple - without having to touch each component's CSS. */
+  --color-bg: #e6fffa;
+  --color-surface: #ffffff;
+  --color-border: #cdece8;
+  --color-text: #1a1d21;
+  --color-text-muted: #5b7d79;
+  --color-primary: var(--color-hr-accent);
+  --color-primary-contrast: #ffffff;
+  --color-info: var(--color-hr-accent);
+  --color-info-bg: var(--color-hr-accent-bg);
+
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  color: var(--color-text);
+  overflow: hidden;
+}
+
+/* --- Top bar --- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--color-hr-topbar);
+  color: #ffffff;
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.brandMark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.periodFilter {
+  margin-left: 12px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.periodFilter option {
+  color: var(--color-text);
+}
+
+.topbarRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.bellButton {
+  position: relative;
+  display: flex;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.bellDot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #f87171;
+  border: 1.5px solid var(--color-hr-topbar);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  overflow: hidden;
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+}
+
+.logoutButton:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.logoutButton:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* --- Body: sidebar + content --- */
+
+.body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar {
+  flex-shrink: 0;
+  width: 84px;
+  background: var(--color-hr-sidebar);
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.sidebarItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 4px;
+  border-radius: var(--radius-md);
+  color: var(--color-hr-sidebar-text);
+  text-decoration: none;
+  font-size: 10.5px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+a.sidebarItem:hover {
+  background: var(--color-hr-sidebar-hover);
+  color: var(--color-hr-sidebar-text-active);
+}
+
+.sidebarItemActive {
+  background: var(--color-hr-sidebar-active-bg);
+  color: var(--color-hr-sidebar-text-active) !important;
+}
+
+.sidebarItemSecondary {
+  opacity: 0.75;
+}
+
+.sidebarDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.14);
+  margin: 6px 6px;
+  flex-shrink: 0;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* --- Secondary horizontal nav (sub-pages within the active sidebar
+   section, e.g. Attendance & Leave's Today/Calendar/Leave/Corrections/
+   Clock ins-outs) --- */
+
+.secondaryNav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 20px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.secondaryLink {
+  padding: 13px 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  margin-right: 22px;
+}
+
+a.secondaryLink:hover {
+  color: var(--color-text);
+}
+
+.secondaryLinkActive {
+  color: var(--color-hr-accent);
+  border-bottom-color: var(--color-hr-accent);
+  font-weight: 600;
+}
+
+.mainScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.main {
+  padding: 20px 24px 24px;
+  max-width: 1360px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.accessDenied {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  max-width: 420px;
+  margin: 80px auto 0;
+  padding: 32px 28px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-danger);
+}
+
+.accessDeniedTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 4px 0 0;
+  color: var(--color-text);
+}
+
+.accessDeniedText {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .sidebar {
+    width: 64px;
+  }
+
+  .sidebarItem span:last-child {
+    display: none;
+  }
+
+  .periodFilter {
+    display: none;
+  }
+}

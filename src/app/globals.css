@@ -1,0 +1,125 @@
+:root {
+  --color-bg: #f5f6f8;
+  --color-surface: #ffffff;
+  --color-border: #e3e6ea;
+  --color-text: #1a1d21;
+  --color-text-muted: #666d76;
+  --color-primary: #4a3aa7;
+  --color-primary-contrast: #ffffff;
+  --color-success: #1a8a4a;
+  --color-success-bg: #e7f6ec;
+  --color-warning: #b96b00;
+  --color-warning-bg: #fdf1e0;
+  --color-danger: #c62828;
+  --color-danger-bg: #fbeaea;
+  --color-info: #4a3aa7;
+  --color-info-bg: #ece9fb;
+
+  /* HR module chrome (top bar + sidebar) and chart tokens - teal family */
+  --color-hr-topbar: #14b8a6;
+  --color-hr-sidebar: #0b6f64;
+  --color-hr-sidebar-hover: rgba(255, 255, 255, 0.1);
+  --color-hr-sidebar-active-bg: rgba(255, 255, 255, 0.16);
+  --color-hr-sidebar-text: rgba(255, 255, 255, 0.75);
+  --color-hr-sidebar-text-active: #ffffff;
+  --color-hr-accent: #0d9488;
+  --color-hr-accent-bg: #ccfbf1;
+  --color-chart-grid: #cdf3ec;
+  --color-chart-axis: #99f6e4;
+  --color-chart-muted: #5b7d79;
+
+  /* Categorical series palette - identity color for multi-category charts
+     (e.g. "Requests by type"). Fixed hue order, validated for CVD
+     separation and contrast - see the dataviz skill's palette reference.
+     Never reassign a slot by value/rank; always by the category's fixed
+     position. */
+  --color-chart-series-1: #2a78d6; /* blue */
+  --color-chart-series-2: #eb6834; /* orange */
+  --color-chart-series-3: #1baf7a; /* aqua */
+  --color-chart-series-4: #eda100; /* yellow */
+  --color-chart-series-5: #e87ba4; /* magenta */
+  --color-chart-series-6: #008300; /* green */
+  --color-chart-series-7: #4a3aa7; /* violet */
+  --color-chart-series-8: #e34948; /* red */
+
+  /* Contrasting call-to-action accent (coral) so buttons stand out against teal */
+  --color-hr-cta: #f2542d;
+  --color-hr-cta-hover: #d9431f;
+  --color-hr-cta-contrast: #ffffff;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #14161a;
+    --color-surface: #1c1f24;
+    --color-border: #2c3036;
+    --color-text: #edeef0;
+    --color-text-muted: #9aa1a9;
+    --color-primary: #9085e9;
+    --color-primary-contrast: #0b1220;
+    --color-success: #4ade80;
+    --color-success-bg: rgba(74, 222, 128, 0.12);
+    --color-warning: #fbbf24;
+    --color-warning-bg: rgba(251, 191, 36, 0.12);
+    --color-danger: #f87171;
+    --color-danger-bg: rgba(248, 113, 113, 0.12);
+    --color-info: #9085e9;
+    --color-info-bg: rgba(144, 133, 233, 0.14);
+
+    --color-hr-topbar: #0f8a7c;
+    --color-hr-sidebar: #05433c;
+    --color-hr-accent: #2dd4bf;
+    --color-hr-accent-bg: rgba(45, 212, 191, 0.14);
+    --color-chart-grid: #1c3330;
+    --color-chart-axis: #244440;
+    --color-chart-muted: #9aa1a9;
+
+    --color-chart-series-1: #3987e5;
+    --color-chart-series-2: #d95926;
+    --color-chart-series-3: #199e70;
+    --color-chart-series-4: #c98500;
+    --color-chart-series-5: #d55181;
+    --color-chart-series-6: #008300;
+    --color-chart-series-7: #9085e9;
+    --color-chart-series-8: #e66767;
+
+    --color-hr-cta: #fb6b47;
+    --color-hr-cta-hover: #f2542d;
+    --color-hr-cta-contrast: #1a0f0a;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+}

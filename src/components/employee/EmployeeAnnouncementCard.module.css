@@ -1,0 +1,123 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+}
+
+.card.unread {
+  border-color: var(--color-primary);
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.priorityBadge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+}
+
+.dot-normal {
+  color: var(--color-info);
+  background: var(--color-info-bg);
+}
+.dot-normal .dot {
+  background: var(--color-info);
+}
+
+.dot-important {
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+.dot-important .dot {
+  background: var(--color-warning);
+}
+
+.dot-urgent {
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+}
+.dot-urgent .dot {
+  background: var(--color-danger);
+}
+
+.typeBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.newBadge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.ackBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.excerpt {
+  font-size: 13px;
+  color: var(--color-text);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.metaLine {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.viewLink {
+  align-self: flex-start;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.viewLink:hover {
+  text-decoration: underline;
+}

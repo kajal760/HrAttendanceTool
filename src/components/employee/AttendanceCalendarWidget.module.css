@@ -1,0 +1,240 @@
+.layout {
+  display: flex;
+  gap: 20px;
+  max-width: 560px;
+}
+
+.calendarCol {
+  flex: 1;
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.monthLabel {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.todayChip {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+.weekRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-bottom: 3px;
+}
+
+.weekday {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  font-weight: 600;
+  border-radius: 7px;
+  position: relative;
+  line-height: 1;
+}
+
+.cell-empty {
+  visibility: hidden;
+}
+
+.cell-present {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.cell-halfday {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.cell-onleave,
+.cell-absent {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.cell-holiday {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.cell-weekend {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.cell-upcoming {
+  color: var(--color-text-muted);
+  font-weight: 500;
+  opacity: 0.55;
+}
+
+.cell-today {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.cell-clickable {
+  cursor: pointer;
+}
+
+.cell-selected {
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+/* --- Right-side legend column: bigger swatches, one per row --- */
+
+.legendCol {
+  flex-shrink: 0;
+  width: 150px;
+  padding-left: 16px;
+  border-left: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.legendTitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.legendSwatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.legendText {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.holidays {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.holidaysLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  margin: 0 0 8px;
+}
+
+.holidayRow {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 0;
+  font-size: 12px;
+}
+
+.holidayDate {
+  color: var(--color-text-muted);
+  font-size: 10.5px;
+}
+
+.holidayName {
+  font-weight: 600;
+}
+
+.dayDetail {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.dayDetailLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  margin: 0 0 8px;
+}
+
+.dayDetailRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+.dayDetailKey {
+  color: var(--color-text-muted);
+}
+
+.dayDetailValue {
+  font-weight: 600;
+}
+
+.dayDetailEmpty {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .legendCol {
+    width: auto;
+    padding-left: 0;
+    border-left: none;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

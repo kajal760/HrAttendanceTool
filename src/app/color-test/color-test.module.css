@@ -1,0 +1,108 @@
+.banner {
+  font-size: 12.5px;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+
+.banner code {
+  font-size: 11.5px;
+  background: rgba(0, 0, 0, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.controls {
+  background: #ffffff;
+  border: 1px solid #e3e6ea;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+
+.controlsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.controlsTitle {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.resetBtn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #e3e6ea;
+  background: #f5f6f8;
+  color: #666d76;
+  cursor: pointer;
+}
+
+.resetBtn:hover {
+  background: #e3e6ea;
+}
+
+.swatchGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.swatch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid #e3e6ea;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.swatch input[type="color"] {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.swatchText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.swatchLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1d21;
+}
+
+.swatchVar {
+  font-size: 10px;
+  color: #666d76;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview {
+  border: 1px dashed #c7cbd1;
+  border-radius: 14px;
+  padding: 20px;
+  background: var(--color-bg);
+}

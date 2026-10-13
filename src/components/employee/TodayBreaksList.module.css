@@ -1,0 +1,29 @@
+.breakList {
+  display: flex;
+  flex-direction: column;
+}
+
+.breakListTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin: 0 0 8px;
+}
+
+.breakRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 4px 0;
+  color: var(--color-text-muted);
+}
+
+.breakRow span:first-child {
+  color: var(--color-text);
+}
+
+.empty {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  padding: 8px 0;
+}

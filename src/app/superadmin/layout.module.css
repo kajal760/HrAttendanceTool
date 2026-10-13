@@ -1,0 +1,357 @@
+.shell {
+  /* Force a light teal-tinted theme here regardless of system dark mode,
+     so this module never falls back to the dark theme's black/grey chrome. */
+  --color-bg: #e6fffa;
+  --color-surface: #ffffff;
+  --color-border: #cdece8;
+  --color-text: #1a1d21;
+  --color-text-muted: #5b7d79;
+  --color-primary-contrast: #ffffff;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  /* body's `color` is resolved once at the body element using whatever
+     theme was active there; re-declare it here so anything inside this
+     shell that doesn't set its own color (e.g. plain inherited text)
+     picks up this module's light theme instead of body's dark-mode value. */
+  color: var(--color-text);
+  /* The shell is locked to the viewport and never scrolls itself - topbar,
+     sidebar, and the secondary nav are static because they simply sit
+     outside the one scrolling region (`.main`), not via position:sticky
+     offset math. */
+  overflow: hidden;
+}
+
+/* --- Top bar (full width, purple) --- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: var(--color-hr-topbar);
+  color: #ffffff;
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.brandMark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.search {
+  flex: 1;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 8px 14px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.search input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.search input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.searchDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  min-width: 320px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 8px;
+  z-index: 100;
+  color: var(--color-text);
+}
+
+.searchGroup {
+  margin-bottom: 4px;
+}
+
+.searchGroupTitle {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 8px 8px 2px;
+}
+
+.searchItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 8px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.searchItem:hover {
+  background: var(--color-bg);
+}
+
+.searchItemMeta {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.searchEmpty {
+  padding: 14px 10px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.topbarRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.bellButton {
+  position: relative;
+  display: flex;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+}
+
+.logoutButton:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.logoutButton:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.bellDot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #f87171;
+  border: 1.5px solid var(--color-hr-topbar);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* --- Body: sidebar + content --- */
+
+.body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar {
+  flex-shrink: 0;
+  width: 84px;
+  background: var(--color-hr-sidebar);
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.sidebarItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 4px;
+  border-radius: var(--radius-md);
+  color: var(--color-hr-sidebar-text);
+  text-decoration: none;
+  font-size: 11px;
+  text-align: center;
+}
+
+a.sidebarItem:hover {
+  background: var(--color-hr-sidebar-hover);
+  color: var(--color-hr-sidebar-text-active);
+}
+
+.sidebarItemActive {
+  background: var(--color-hr-sidebar-active-bg);
+  color: var(--color-hr-sidebar-text-active) !important;
+}
+
+.sidebarItemDisabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.sidebarBadge {
+  position: absolute;
+  top: 4px;
+  right: 14px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--color-danger);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebarDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.14);
+  margin: 6px 6px;
+  flex-shrink: 0;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* --- Secondary horizontal nav --- */
+
+.secondaryNav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 20px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.secondaryLink {
+  padding: 13px 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  margin-right: 22px;
+}
+
+a.secondaryLink:hover {
+  color: var(--color-text);
+}
+
+.secondaryLinkActive {
+  color: var(--color-hr-accent);
+  border-bottom-color: var(--color-hr-accent);
+  font-weight: 600;
+}
+
+.secondaryLinkDisabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.mainScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.main {
+  padding: 24px;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+@media (max-width: 720px) {
+  .sidebar {
+    width: 64px;
+  }
+
+  .sidebarItem span:last-child {
+    display: none;
+  }
+
+  .search {
+    display: none;
+  }
+}

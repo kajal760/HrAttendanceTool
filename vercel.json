@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/birthdays/notify?token=REPLACE_WITH_CRON_SECRET",
+      "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/anniversaries/notify?token=REPLACE_WITH_CRON_SECRET",
+      "schedule": "30 4 * * *"
+    }
+  ]
+}

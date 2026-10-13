@@ -1,0 +1,66 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.formRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  flex: 1;
+  min-width: 160px;
+}
+
+.field input,
+.field select,
+.field textarea {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-text);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.error {
+  font-size: 12px;
+  color: var(--color-danger);
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+}
+
+.submitButton {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  cursor: pointer;
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
