@@ -1,0 +1,27 @@
+.pageHeader {
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.chartBox {
+  position: relative;
+  height: 280px;
+  max-width: 360px;
+}
+
+.empty {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}

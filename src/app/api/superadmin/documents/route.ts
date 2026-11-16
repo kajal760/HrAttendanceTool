@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/backend";
 import { addDocument, getDocuments } from "@/lib/superadmin/document-store";
 import { DOCUMENT_CATEGORIES, type DocumentCategory } from "@/types/documents";
 
@@ -7,7 +8,11 @@ export const dynamic = "force-dynamic";
 const MAX_FILE_BYTES = 20 * 1024 * 1024; // 20MB
 
 export async function GET() {
-  return NextResponse.json({ documents: await getDocuments() });
+  try {
+    return NextResponse.json({ documents: await getDocuments() });
+  } catch (err) {
+    return errorResponse(err);
+  }
 }
 
 // Uploaded from the Reports page's upload form. Only PDFs are accepted since
@@ -36,16 +41,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "File is larger than 20MB." }, { status: 400 });
   }
 
-  const fileBytes = new Uint8Array(await file.arrayBuffer());
-  const doc = await addDocument({
-    title: title.trim(),
-    category: category as DocumentCategory,
-    fileName: file.name,
-    fileBytes,
-    // TODO: read from the authenticated session once auth exists.
-    uploadedBy: "Super Admin",
-    employeeId: typeof employeeId === "string" && employeeId.length > 0 ? employeeId : undefined,
-  });
-
-  return NextResponse.json({ document: doc }, { status: 201 });
+  try {
+    const doc = await addDocument({
+      title: title.trim(),
+      category: category as DocumentCategory,
+      file,
+      employeeId: typeof employeeId === "string" && employeeId.length > 0 ? employeeId : undefined,
+    });
+    return NextResponse.json({ document: doc }, { status: 201 });
+  } catch (err) {
+    return errorResponse(err);
+  }
 }

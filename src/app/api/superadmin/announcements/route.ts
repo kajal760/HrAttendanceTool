@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { addAnnouncement, getAnnouncements, saveAttachment } from "@/lib/hr/announcement-store";
-import { ANNOUNCEMENT_CREATOR_ROLES, ANNOUNCEMENT_PRIORITIES, ANNOUNCEMENT_TYPES } from "@/types/announcement";
+import { addAnnouncement, addAnnouncementAttachment, getAnnouncements } from "@/lib/hr/announcement-store";
+import { errorResponse } from "@/lib/api/backend";
+import { ANNOUNCEMENT_PRIORITIES, ANNOUNCEMENT_TYPES } from "@/types/announcement";
 import type { AnnouncementAudience, AnnouncementAudienceType } from "@/types/announcement";
 
 export const dynamic = "force-dynamic";
@@ -8,11 +9,16 @@ export const dynamic = "force-dynamic";
 const AUDIENCE_TYPES: AnnouncementAudienceType[] = ["Everyone", "Department", "Team", "Employees", "Managers", "HR"];
 
 export async function GET() {
-  return NextResponse.json({ announcements: await getAnnouncements() });
+  try {
+    return NextResponse.json({ announcements: await getAnnouncements() });
+  } catch (err) {
+    return errorResponse(err);
+  }
 }
 
-// Multipart (not JSON) because attachments are real uploaded files - see
-// `saveAttachment` in `announcement-store.ts`.
+// Multipart (not JSON) because attachments are real uploaded files - the
+// announcement itself is created in one backend call, then each file is
+// attached with a separate call (see `addAnnouncementAttachment`).
 export async function POST(request: Request) {
   const form = await request.formData();
 
@@ -24,13 +30,10 @@ export async function POST(request: Request) {
   const audienceDepartment = form.get("audienceDepartment");
   const audienceManagerId = form.get("audienceManagerId");
   const audienceEmployeeIdsRaw = form.get("audienceEmployeeIds");
-  const requireAcknowledgement = form.get("requireAcknowledgement") === "true";
   const saveAsDraft = form.get("saveAsDraft") === "true";
   const publishMode = form.get("publishMode");
   const scheduledAt = form.get("scheduledAt");
   const expiresAt = form.get("expiresAt");
-  const createdByName = String(form.get("createdByName") ?? "").trim();
-  const createdByRole = String(form.get("createdByRole") ?? "");
 
   if (!title) return NextResponse.json({ error: "Title is required." }, { status: 400 });
   if (!content) return NextResponse.json({ error: "Content is required." }, { status: 400 });
@@ -42,10 +45,6 @@ export async function POST(request: Request) {
   }
   if (!AUDIENCE_TYPES.includes(audienceType as AnnouncementAudienceType)) {
     return NextResponse.json({ error: "Invalid audience." }, { status: 400 });
-  }
-  if (!createdByName) return NextResponse.json({ error: "createdByName is required." }, { status: 400 });
-  if (!ANNOUNCEMENT_CREATOR_ROLES.includes(createdByRole as never)) {
-    return NextResponse.json({ error: "Invalid createdByRole." }, { status: 400 });
   }
 
   const audience: AnnouncementAudience = { type: audienceType as AnnouncementAudienceType };
@@ -94,24 +93,25 @@ export async function POST(request: Request) {
   }
 
   const files = form.getAll("attachments").filter((f): f is File => f instanceof File && f.size > 0);
-  const attachments = await Promise.all(
-    files.map(async (file) => saveAttachment(file.name, new Uint8Array(await file.arrayBuffer()), file.type || "application/octet-stream")),
-  );
 
-  const announcement = await addAnnouncement({
-    title,
-    content,
-    type: type as (typeof ANNOUNCEMENT_TYPES)[number],
-    priority: priority as (typeof ANNOUNCEMENT_PRIORITIES)[number],
-    audience,
-    requireAcknowledgement,
-    publishAt,
-    expiresAt: expiresAtIso,
-    attachments,
-    createdByName,
-    createdByRole: createdByRole as (typeof ANNOUNCEMENT_CREATOR_ROLES)[number],
-    saveAsDraft,
-  });
+  try {
+    let announcement = await addAnnouncement({
+      title,
+      content,
+      type: type as (typeof ANNOUNCEMENT_TYPES)[number],
+      priority: priority as (typeof ANNOUNCEMENT_PRIORITIES)[number],
+      audience,
+      publishAt,
+      expiresAt: expiresAtIso,
+      saveAsDraft,
+    });
 
-  return NextResponse.json({ announcement }, { status: 201 });
+    for (const file of files) {
+      announcement = await addAnnouncementAttachment(announcement.id, file);
+    }
+
+    return NextResponse.json({ announcement }, { status: 201 });
+  } catch (err) {
+    return errorResponse(err);
+  }
 }

@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
-import { getCorrectionRequests } from "@/lib/employee/mock-data";
+import { getCorrectionsForEmployee } from "@/lib/hr/attendance-corrections";
+import { requireCurrentEmployee } from "@/lib/auth/current-employee";
 import SectionCard from "@/components/employee/SectionCard";
 import CorrectionRequestPanel from "@/components/employee/CorrectionRequestPanel";
 
 export const metadata: Metadata = {
-  title: "Correction Requests | HR Attendance",
+  title: "Correction Requests | HumSetu",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function EmployeeAttendanceCorrectionsPage() {
-  const corrections = await getCorrectionRequests();
+  const employee = await requireCurrentEmployee();
+  const corrections = await getCorrectionsForEmployee(employee.id);
 
   return (
     <>

@@ -4,7 +4,7 @@ import SectionCard from "@/components/employee/SectionCard";
 import DocumentList from "@/components/employee/DocumentList";
 
 export const metadata: Metadata = {
-  title: "SOPs | HR Attendance",
+  title: "SOPs | HumSetu",
 };
 
 export const dynamic = "force-dynamic";

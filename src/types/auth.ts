@@ -7,24 +7,20 @@
 
 export type Role = "Admin" | "HR" | "Employee";
 
-export interface AuthUser {
-  id: string;
-  email: string;
-  passwordHash: string;
-  role: Role;
-  name: string;
-  // Links a HR/Employee login to their Employee Master record
-  // (`@/lib/hr/employee-store`) - unset for a pure Admin account that isn't
-  // also an employee.
-  employeeId?: string;
-}
-
-// What's actually stored in the signed session cookie - deliberately a
-// subset of AuthUser (no password hash).
+// What's stored in the signed session cookie. `accessToken` is the FastAPI
+// backend's bearer token - the Next.js server sends it on every backend
+// call (`@/lib/api/backend`); the cookie is httpOnly, so the browser never
+// reads it. `exp` (epoch seconds) mirrors the token's expiry.
+//
+// Login is email + OTP (see `@/components/auth/LoginForm`), so the identity
+// carried here is the signed-in email address - mirrors `SessionUser` in
+// the backend's `app/schemas/auth.py`.
 export interface SessionPayload {
   userId: string;
   email: string;
   role: Role;
   name: string;
   employeeId?: string;
+  accessToken: string;
+  exp: number;
 }

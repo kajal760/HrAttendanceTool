@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import type { CorrectionStatus } from "@/lib/hr/attendance-corrections";
 import { toneClass, type BadgeTone } from "../lifecycle/badge-tones";
 import styles from "../lifecycle/Lifecycle.module.css";
 import formStyles from "../FormModal.module.css";
+
+const STATUS_FILTER_VALUES: CorrectionStatus[] = ["Pending", "Approved", "Rejected"];
 
 export interface CorrectionRow {
   id: string;
@@ -38,6 +40,23 @@ export default function CorrectionsTable({ initialRows }: { initialRows: Correct
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [name, setName] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
+  const [date, setDate] = useState("");
+  const [status, setStatus] = useState<CorrectionStatus | "">("");
+
+  const filtered = useMemo(() => {
+    const n = name.trim().toLowerCase();
+    const id = employeeId.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (n && !r.employeeName.toLowerCase().includes(n)) return false;
+      if (id && !r.employeeCode.toLowerCase().includes(id)) return false;
+      if (date && r.date !== date) return false;
+      if (status && r.status !== status) return false;
+      return true;
+    });
+  }, [rows, name, employeeId, date, status]);
+
   async function decide(row: CorrectionRow, status: "Approved" | "Rejected") {
     setBusyId(row.id);
     setError(null);
@@ -64,6 +83,40 @@ export default function CorrectionsTable({ initialRows }: { initialRows: Correct
   return (
     <div>
       {error && <p style={{ fontSize: 12, color: "var(--color-danger)", margin: "0 0 10px" }}>{error}</p>}
+      <div className={styles.toolbar}>
+        <input
+          type="text"
+          className={styles.searchInput}
+          placeholder="Search by name..."
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <input
+          type="text"
+          className={styles.filterSelect}
+          placeholder="Employee ID"
+          value={employeeId}
+          onChange={(e) => setEmployeeId(e.target.value)}
+        />
+        <input
+          type="date"
+          className={styles.filterSelect}
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          aria-label="Filter by date"
+        />
+        <select
+          className={styles.filterSelect}
+          value={status}
+          onChange={(e) => setStatus(e.target.value as CorrectionStatus | "")}
+          aria-label="Filter by status"
+        >
+          <option value="">All statuses</option>
+          {STATUS_FILTER_VALUES.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+      </div>
       <div className={styles.tableWrap}>
         <table className={styles.table}>
           <thead>
@@ -79,7 +132,7 @@ export default function CorrectionsTable({ initialRows }: { initialRows: Correct
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
+            {filtered.map((r) => (
               <tr key={r.id}>
                 <td>
                   <span style={{ fontWeight: 600 }}>{r.employeeName}</span>
@@ -112,7 +165,9 @@ export default function CorrectionsTable({ initialRows }: { initialRows: Correct
             ))}
           </tbody>
         </table>
-        {rows.length === 0 && <div className={styles.empty}>No correction requests.</div>}
+        {filtered.length === 0 && (
+          <div className={styles.empty}>{rows.length === 0 ? "No correction requests." : "No requests match these filters."}</div>
+        )}
       </div>
 
       {detail && (

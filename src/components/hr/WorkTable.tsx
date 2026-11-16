@@ -7,7 +7,7 @@ import { STATUS_FILTERS, displayStatus, projectStatus } from "@/lib/work/status"
 import { useDepartmentNames } from "./useDepartmentNames";
 import styles from "./ProjectBoard.module.css";
 
-export type WorkTableKind = "projects" | "tasks" | "workload";
+export type WorkTableKind = "projects" | "tasks";
 
 interface WorkTableProps {
   kind: WorkTableKind;
@@ -107,10 +107,10 @@ function EditableCell({
   );
 }
 
-// The table view behind the Table button on the Projects, Tasks, and
-// Workload pages. HR and managers can edit project name/department/deadline
-// and task title/project/deadline/status inline. The employee summary is
-// shown but stays employee-written.
+// The table view behind the Table button on the Projects and Tasks pages.
+// HR and managers can edit project name/department/deadline and task
+// title/project/deadline/status inline. The employee summary is shown but
+// stays employee-written.
 export default function WorkTable({ kind, projects: initialProjects, tasks: initialTasks, employees }: WorkTableProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [tasks, setTasks] = useState<WorkTask[]>(initialTasks);
@@ -282,168 +282,102 @@ export default function WorkTable({ kind, projects: initialProjects, tasks: init
     );
   }
 
-  if (kind === "tasks") {
-    const projectOptions = projects.map((p) => ({ value: p.id, label: p.name }));
-    const statusOptions = STATUS_OPTIONS.map((s) => ({ value: s, label: s }));
-    const filteredTasks = tasks.filter((t) => {
-      const project = projectsById.get(t.projectId);
-      if (searchQuery) {
-        const assigneeNames = namesOf(t.assigneeIds).join(" ").toLowerCase();
-        if (!(t.title.toLowerCase().includes(searchQuery) || assigneeNames.includes(searchQuery))) return false;
-      }
-      if (projectFilter && t.projectId !== projectFilter) return false;
-      if (departmentFilter && (project?.departmentName ?? "") !== departmentFilter) return false;
-      if (statusFilter && displayStatus(t) !== statusFilter) return false;
-      return true;
-    });
-    return (
-      <div>
-        {filterBar("Search task or assignee...", {
-          showProject: true,
-          showStatus: STATUS_FILTERS.map((s) => ({ value: s, label: s })),
-        })}
-        <div className={styles.tableWrap}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Task</th>
-              <th>Project</th>
-              <th>Department</th>
-              <th>Assignees</th>
-              <th>Deadline</th>
-              <th>Status</th>
-              <th>Blocked by</th>
-              <th>Mentioned</th>
-              <th>Employee summary</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredTasks.map((t) => {
-              const project = projectsById.get(t.projectId);
-              const status = displayStatus(t);
-              const blocker = t.dependsOnTaskId ? tasksById.get(t.dependsOnTaskId) : undefined;
-              return (
-                <tr key={t.id}>
-                  <td>
-                    <EditableCell
-                      kind="text"
-                      value={t.title}
-                      display={t.title}
-                      onSave={(next) => (next.trim() ? saveTask(t.id, { title: next.trim() }) : Promise.resolve(false))}
-                    />
-                  </td>
-                  <td>
-                    <EditableCell
-                      kind="select"
-                      value={t.projectId}
-                      display={project?.name ?? "Unlinked"}
-                      options={projectOptions}
-                      onSave={(next) => saveTask(t.id, { projectId: next })}
-                    />
-                  </td>
-                  <td>{project?.departmentName ?? "-"}</td>
-                  <td>{t.assigneeIds.length ? namesOf(t.assigneeIds).join(", ") : "-"}</td>
-                  <td className={status === "Overdue" ? styles.overdue : undefined}>
-                    <EditableCell
-                      kind="date"
-                      value={t.deadline}
-                      display={formatDate(t.deadline)}
-                      onSave={(next) => (next ? saveTask(t.id, { deadline: next }) : Promise.resolve(false))}
-                    />
-                  </td>
-                  <td>
-                    <EditableCell
-                      kind="select"
-                      value={t.status}
-                      display={status}
-                      options={statusOptions}
-                      onSave={(next) => saveTask(t.id, { status: next })}
-                    />
-                  </td>
-                  <td>{blocker?.title ?? "-"}</td>
-                  <td>{t.mentionedIds?.length ? namesOf(t.mentionedIds).join(", ") : "-"}</td>
-                  <td className={styles.summaryCell}>
-                    {t.summary ? (
-                      <>
-                        <span>{t.summary}</span>
-                        {t.summaryUpdatedAt && <span className={styles.muted}> · {formatDate(t.summaryUpdatedAt)}</span>}
-                      </>
-                    ) : (
-                      <span className={styles.muted}>No update yet</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {filteredTasks.length === 0 && (
-          <div className={styles.empty}>{tasks.length === 0 ? "No tasks yet." : "No tasks match these filters."}</div>
-        )}
-        </div>
-      </div>
-    );
-  }
-
-  const allRows = employees.map((e) => {
-    const mine = tasks.filter((t) => t.assigneeIds.includes(e.id));
-    return {
-      id: e.id,
-      name: e.name,
-      department: e.department,
-      designation: e.designation,
-      projectIds: projects.filter((p) => p.memberIds.includes(e.id)).map((p) => p.id),
-      total: mine.length,
-      ongoing: mine.filter((t) => displayStatus(t) === "Ongoing").length,
-      pending: mine.filter((t) => displayStatus(t) === "Pending").length,
-      completed: mine.filter((t) => t.status === "Completed").length,
-      overdue: mine.filter((t) => displayStatus(t) === "Overdue").length,
-    };
-  });
-
-  const rows = allRows.filter((r) => {
-    if (searchQuery && !r.name.toLowerCase().includes(searchQuery)) return false;
-    if (departmentFilter && r.department !== departmentFilter) return false;
-    if (projectFilter && !r.projectIds.includes(projectFilter)) return false;
+  const projectOptions = projects.map((p) => ({ value: p.id, label: p.name }));
+  const statusOptions = STATUS_OPTIONS.map((s) => ({ value: s, label: s }));
+  const filteredTasks = tasks.filter((t) => {
+    const project = projectsById.get(t.projectId);
+    if (searchQuery) {
+      const assigneeNames = namesOf(t.assigneeIds).join(" ").toLowerCase();
+      if (!(t.title.toLowerCase().includes(searchQuery) || assigneeNames.includes(searchQuery))) return false;
+    }
+    if (projectFilter && t.projectId !== projectFilter) return false;
+    if (departmentFilter && (project?.departmentName ?? "") !== departmentFilter) return false;
+    if (statusFilter && displayStatus(t) !== statusFilter) return false;
     return true;
   });
-
   return (
     <div>
-      {filterBar("Search employee...", { showProject: true })}
+      {filterBar("Search task or assignee...", {
+        showProject: true,
+        showStatus: STATUS_FILTERS.map((s) => ({ value: s, label: s })),
+      })}
       <div className={styles.tableWrap}>
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>Employee</th>
+            <th>Task</th>
+            <th>Project</th>
             <th>Department</th>
-            <th>Designation</th>
-            <th>Projects</th>
-            <th>Total tasks</th>
-            <th>Ongoing</th>
-            <th>Pending</th>
-            <th>Completed</th>
-            <th>Overdue</th>
+            <th>Assignees</th>
+            <th>Deadline</th>
+            <th>Status</th>
+            <th>Blocked by</th>
+            <th>Mentioned</th>
+            <th>Employee summary</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr key={r.id}>
-              <td className={styles.strong}>{r.name}</td>
-              <td>{r.department}</td>
-              <td>{r.designation}</td>
-              <td>{r.projectIds.length}</td>
-              <td>{r.total}</td>
-              <td>{r.ongoing}</td>
-              <td>{r.pending}</td>
-              <td>{r.completed}</td>
-              <td className={r.overdue > 0 ? styles.overdue : undefined}>{r.overdue}</td>
-            </tr>
-          ))}
+          {filteredTasks.map((t) => {
+            const project = projectsById.get(t.projectId);
+            const status = displayStatus(t);
+            const blocker = t.dependsOnTaskId ? tasksById.get(t.dependsOnTaskId) : undefined;
+            return (
+              <tr key={t.id}>
+                <td>
+                  <EditableCell
+                    kind="text"
+                    value={t.title}
+                    display={t.title}
+                    onSave={(next) => (next.trim() ? saveTask(t.id, { title: next.trim() }) : Promise.resolve(false))}
+                  />
+                </td>
+                <td>
+                  <EditableCell
+                    kind="select"
+                    value={t.projectId}
+                    display={project?.name ?? "Unlinked"}
+                    options={projectOptions}
+                    onSave={(next) => saveTask(t.id, { projectId: next })}
+                  />
+                </td>
+                <td>{project?.departmentName ?? "-"}</td>
+                <td>{t.assigneeIds.length ? namesOf(t.assigneeIds).join(", ") : "-"}</td>
+                <td className={status === "Overdue" ? styles.overdue : undefined}>
+                  <EditableCell
+                    kind="date"
+                    value={t.deadline}
+                    display={formatDate(t.deadline)}
+                    onSave={(next) => (next ? saveTask(t.id, { deadline: next }) : Promise.resolve(false))}
+                  />
+                </td>
+                <td>
+                  <EditableCell
+                    kind="select"
+                    value={t.status}
+                    display={status}
+                    options={statusOptions}
+                    onSave={(next) => saveTask(t.id, { status: next })}
+                  />
+                </td>
+                <td>{blocker?.title ?? "-"}</td>
+                <td>{t.mentionedIds?.length ? namesOf(t.mentionedIds).join(", ") : "-"}</td>
+                <td className={styles.summaryCell}>
+                  {t.summary ? (
+                    <>
+                      <span>{t.summary}</span>
+                      {t.summaryUpdatedAt && <span className={styles.muted}> · {formatDate(t.summaryUpdatedAt)}</span>}
+                    </>
+                  ) : (
+                    <span className={styles.muted}>No update yet</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
-      {rows.length === 0 && (
-        <div className={styles.empty}>{allRows.length === 0 ? "No employees yet." : "No employees match these filters."}</div>
+      {filteredTasks.length === 0 && (
+        <div className={styles.empty}>{tasks.length === 0 ? "No tasks yet." : "No tasks match these filters."}</div>
       )}
       </div>
     </div>

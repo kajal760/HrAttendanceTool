@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Paperclip, CheckCircle2 } from "lucide-react";
+import { useEffect } from "react";
+import { Paperclip } from "lucide-react";
 import type { Announcement } from "@/types/announcement";
 import styles from "./EmployeeAnnouncementReader.module.css";
 
@@ -21,14 +21,10 @@ interface EmployeeAnnouncementReaderProps {
 }
 
 // Records a read receipt as soon as this mounts (the employee actually
-// opened the announcement), and offers the acknowledgement action when the
-// announcement requires one.
-export default function EmployeeAnnouncementReader({ announcement: initial, employeeId }: EmployeeAnnouncementReaderProps) {
-  const [announcement, setAnnouncement] = useState(initial);
-  const [acknowledging, setAcknowledging] = useState(false);
-
+// opened the announcement).
+export default function EmployeeAnnouncementReader({ announcement, employeeId }: EmployeeAnnouncementReaderProps) {
   useEffect(() => {
-    fetch(`/api/announcements/${initial.id}/read`, {
+    fetch(`/api/announcements/${announcement.id}/read`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ employeeId }),
@@ -37,24 +33,7 @@ export default function EmployeeAnnouncementReader({ announcement: initial, empl
     });
     // Only on mount for this announcement/employee pair.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initial.id, employeeId]);
-
-  const alreadyAcknowledged = announcement.acknowledgements.some((a) => a.employeeId === employeeId);
-
-  async function acknowledge() {
-    setAcknowledging(true);
-    try {
-      const res = await fetch(`/api/announcements/${announcement.id}/acknowledge`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ employeeId }),
-      });
-      const data = await res.json();
-      if (res.ok) setAnnouncement(data.announcement);
-    } finally {
-      setAcknowledging(false);
-    }
-  }
+  }, [announcement.id, employeeId]);
 
   return (
     <div className={styles.wrap}>
@@ -80,25 +59,6 @@ export default function EmployeeAnnouncementReader({ announcement: initial, empl
           </div>
         )}
       </div>
-
-      {announcement.requireAcknowledgement && (
-        <div className={styles.ackCard}>
-          {alreadyAcknowledged ? (
-            <span className={styles.ackDone}>
-              <CheckCircle2 size={16} /> You acknowledged this announcement.
-            </span>
-          ) : (
-            <>
-              <p className={styles.ackText}>
-                This announcement requires acknowledgement: "I have read and understood the updated company policy."
-              </p>
-              <button type="button" className={styles.ackButton} disabled={acknowledging} onClick={acknowledge}>
-                {acknowledging ? "Submitting..." : "I acknowledge"}
-              </button>
-            </>
-          )}
-        </div>
-      )}
     </div>
   );
 }

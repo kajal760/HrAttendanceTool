@@ -3,16 +3,19 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
-import { ArrowLeft, FileText, Plus, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, FileText, Package, Plus, Trash2, Upload } from "lucide-react";
 import { DOCUMENT_CATEGORIES } from "@/types/documents";
 import type { CompanyDocument, DocumentCategory } from "@/types/documents";
 import type { EducationRecord, EmployeeOverview, EmployeeStatus, ExperienceRecord, WorkType } from "@/types/hr";
+import type { Asset, AssetLifecycle } from "@/types/asset";
 import { withBase } from "@/lib/portal";
 import { usePortalBase } from "./usePortalBase";
 import styles from "./EmployeeProfile.module.css";
+import lifecycleStyles from "./lifecycle/Lifecycle.module.css";
 import AttendanceHistoryView from "./AttendanceHistoryView";
 import ConfirmDialog from "./lifecycle/ConfirmDialog";
 import LifecycleStageCard from "./LifecycleStageCard";
+import TrainingPanel from "./TrainingPanel";
 import type { AttendanceHistory } from "@/types/attendance";
 
 const TABS = [
@@ -21,6 +24,8 @@ const TABS = [
   { key: "education", label: "Education & Experience" },
   { key: "employment", label: "Employment & Reporting" },
   { key: "documents", label: "Documents" },
+  { key: "assets", label: "Assets" },
+  { key: "training", label: "Training" },
   { key: "attendance", label: "Attendance" },
   { key: "history", label: "History" },
 ] as const;
@@ -79,9 +84,10 @@ interface EmployeeProfileProps {
   employee: EmployeeOverview;
   managerOptions: ManagerOption[];
   attendance: AttendanceHistory;
+  assets: Asset[];
 }
 
-export default function EmployeeProfile({ employee: initial, managerOptions, attendance }: EmployeeProfileProps) {
+export default function EmployeeProfile({ employee: initial, managerOptions, attendance, assets }: EmployeeProfileProps) {
   const base = usePortalBase();
   const [employee, setEmployee] = useState<EmployeeOverview>(initial);
   const [tab, setTab] = useState<TabKey>("overview");
@@ -223,7 +229,7 @@ export default function EmployeeProfile({ employee: initial, managerOptions, att
 
   return (
     <div>
-      <Link href={withBase(base, "/employees")} className={styles.backLink}>
+      <Link href={withBase(base, "/employees/directory")} className={styles.backLink}>
         <ArrowLeft size={14} /> All employees
       </Link>
 
@@ -495,6 +501,8 @@ export default function EmployeeProfile({ employee: initial, managerOptions, att
       {tab === "education" && <EducationExperiencePanel employee={employee} onSaved={setEmployee} />}
       {tab === "employment" && <EmploymentPanel employee={employee} managerName={managerName} onSaved={setEmployee} />}
       {tab === "documents" && <DocumentsPanel employeeId={employee.id} />}
+      {tab === "assets" && <AssetsPanel assets={assets} />}
+      {tab === "training" && <TrainingPanel employeeId={employee.id} />}
       {tab === "attendance" && <AttendanceHistoryView data={attendance} />}
       {tab === "history" && <HistoryPanel employee={employee} />}
     </div>
@@ -926,6 +934,66 @@ function DocumentsPanel({ employeeId }: { employeeId: string }) {
               </li>
             ))}
           </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- Assets --------------------------------------------------------------
+
+const ASSET_STATUS_COLOR: Record<AssetLifecycle, { color: string; background: string }> = {
+  Available: { color: "var(--color-success)", background: "var(--color-success-bg)" },
+  Assigned: { color: "var(--color-info)", background: "var(--color-info-bg)" },
+  "Under repair": { color: "var(--color-warning)", background: "var(--color-warning-bg)" },
+  Retired: { color: "var(--color-danger)", background: "var(--color-danger-bg)" },
+};
+
+// Read-only: assets are assigned/returned from the Assets module, not from
+// here - this tab just answers "what does this employee currently have,
+// and what have they had" by filtering the full asset list down to the
+// ones whose `ownerId` is this employee (set server-side in the page).
+function AssetsPanel({ assets }: { assets: Asset[] }) {
+  return (
+    <div className={styles.panel}>
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>Assigned assets</h3>
+        {assets.length === 0 ? (
+          <div className={styles.emptyHint}>No assets assigned to this employee.</div>
+        ) : (
+          <div className={lifecycleStyles.tableWrap}>
+            <table className={lifecycleStyles.table}>
+              <thead>
+                <tr>
+                  <th>Asset</th>
+                  <th>Category</th>
+                  <th>Asset Tag</th>
+                  <th>Serial Number</th>
+                  <th>Status</th>
+                  <th>Assigned On</th>
+                </tr>
+              </thead>
+              <tbody>
+                {assets.map((a) => (
+                  <tr key={a.id}>
+                    <td style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600 }}>
+                      <Package size={14} />
+                      {a.name}
+                    </td>
+                    <td>{a.category}</td>
+                    <td className={lifecycleStyles.muted}>{a.assetTag}</td>
+                    <td className={lifecycleStyles.muted}>{a.serialNumber ?? "-"}</td>
+                    <td>
+                      <span className={lifecycleStyles.badge} style={ASSET_STATUS_COLOR[a.status]}>
+                        {a.status}
+                      </span>
+                    </td>
+                    <td className={lifecycleStyles.muted}>{a.assignedOn ? formatDate(a.assignedOn) : "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

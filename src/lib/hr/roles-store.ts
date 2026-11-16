@@ -21,6 +21,7 @@ export const FEATURES: RoleFeature[] = [
   { key: "manageDocuments", label: "Upload company documents" },
   { key: "viewReports", label: "View reports" },
   { key: "manageRoles", label: "Edit roles & permissions" },
+  { key: "createLogin", label: "Create HR / Employee login accounts" },
 ];
 
 function defaultMatrix(): RolePermissionsMatrix {
@@ -37,12 +38,20 @@ function defaultMatrix(): RolePermissionsMatrix {
   };
 }
 
+// Merges the saved matrix over fresh defaults (rather than returning the
+// saved file as-is) so a feature added after the file was first saved - like
+// this one - gets its role defaults instead of silently reading as
+// unchecked for every role, including ones that should start enabled.
 export async function getRolesMatrix(): Promise<RolePermissionsMatrix> {
+  const defaults = defaultMatrix();
   try {
     const raw = await readFile(INDEX_PATH, "utf8");
-    return JSON.parse(raw) as RolePermissionsMatrix;
+    const saved = JSON.parse(raw) as RolePermissionsMatrix;
+    return Object.fromEntries(
+      ROLES.map((role) => [role, { ...defaults[role], ...saved[role] }]),
+    ) as RolePermissionsMatrix;
   } catch {
-    return defaultMatrix();
+    return defaults;
   }
 }
 

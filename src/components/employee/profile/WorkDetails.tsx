@@ -1,7 +1,6 @@
 import type { EmployeeOverview } from "@/types/hr";
 import SectionCard from "../SectionCard";
 import { formatDate, formatSalary } from "@/lib/employee/profile-format";
-import Fact from "./Fact";
 import styles from "./Profile.module.css";
 
 interface WorkDetailsProps {
@@ -17,15 +16,40 @@ export default function WorkDetails({ employee, managerName }: WorkDetailsProps)
   return (
     <div className={styles.grid}>
       <SectionCard title="Employment">
-        <div className={styles.factGrid}>
-          <Fact label="Department" value={employee.department} />
-          <Fact label="Designation" value={employee.designation} />
-          <Fact label="Manager" value={managerName ?? "Unassigned"} />
-          <Fact label="Location" value={employee.location ?? "-"} />
-          <Fact label="Work type" value={employee.workType ?? "-"} />
-          <Fact label="Joined" value={formatDate(employee.joinedOn)} />
-          <Fact label="Age" value={String(employee.age)} />
-          <Fact label="Salary" value={formatSalary(employee.salary)} />
+        <p className={styles.sectionNote}>Set by HR/your manager - not editable here.</p>
+        <div className={styles.editFieldGrid}>
+          <label className={styles.editField}>
+            Department
+            <input value={employee.department} readOnly />
+          </label>
+          <label className={styles.editField}>
+            Designation
+            <input value={employee.designation} readOnly />
+          </label>
+          <label className={styles.editField}>
+            Manager
+            <input value={managerName ?? "Unassigned"} readOnly />
+          </label>
+          <label className={styles.editField}>
+            Location
+            <input value={employee.location ?? "-"} readOnly />
+          </label>
+          <label className={styles.editField}>
+            Work type
+            <input value={employee.workType ?? "-"} readOnly />
+          </label>
+          <label className={styles.editField}>
+            Joined
+            <input value={formatDate(employee.joinedOn)} readOnly />
+          </label>
+          <label className={styles.editField}>
+            Age
+            <input value={String(employee.age)} readOnly />
+          </label>
+          <label className={styles.editField}>
+            Salary
+            <input value={formatSalary(employee.salary)} readOnly />
+          </label>
         </div>
       </SectionCard>
 

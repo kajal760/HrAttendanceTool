@@ -4,7 +4,7 @@ import SectionCard from "@/components/employee/SectionCard";
 import DocumentList from "@/components/employee/DocumentList";
 
 export const metadata: Metadata = {
-  title: "Company Policies | HR Attendance",
+  title: "HR Policies | HumSetu",
 };
 
 // The document store is live, mutable, in-memory state - never prerender a
@@ -18,12 +18,12 @@ export default async function EmployeeDocumentsPage() {
   return (
     <>
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Company Policies</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>HR Policies</h1>
         <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0 }}>
-          Leave policy, handbook, and other company documents published by HR.
+          Leave policy, handbook, and other HR documents published by HR.
         </p>
       </div>
-      <SectionCard title="Company documents">
+      <SectionCard title="HR documents">
         <DocumentList documents={policies} />
       </SectionCard>
     </>

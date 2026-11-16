@@ -5,7 +5,7 @@ import { getEmployeeOverviews } from "@/lib/hr/employee-store";
 import CorrectionsTable, { type CorrectionRow } from "@/components/hr/attendance/CorrectionsTable";
 
 export const metadata: Metadata = {
-  title: "Attendance Corrections | HR Attendance",
+  title: "Attendance Corrections | HumSetu",
 };
 
 export const dynamic = "force-dynamic";

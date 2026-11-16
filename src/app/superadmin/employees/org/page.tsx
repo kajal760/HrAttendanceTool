@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { getOrgChartData } from "@/lib/hr/mock-data";
+import { getOrgChartData } from "@/lib/hr/dashboard-data";
 import { getOrgRegistry } from "@/lib/hr/org-registry-store";
 import OrgChart from "@/components/hr/OrgChart";
 import OrgRegistryManager from "@/components/hr/OrgRegistryManager";
 
 export const metadata: Metadata = {
-  title: "Org Structure | HR Attendance",
+  title: "Org Structure | HumSetu",
 };
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,8 @@ export default async function OrgStructurePage() {
           Org Structure
         </h1>
         <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0 }}>
-          Manage departments, designations, and locations below - scroll down to reveal each department in the chart.
+          Departments, designations, and locations appear here automatically as employees are
+          assigned to them - scroll down to reveal each department in the chart.
         </p>
       </div>
 
@@ -37,9 +38,9 @@ export default async function OrgStructurePage() {
           marginBottom: 28,
         }}
       >
-        <OrgRegistryManager resource="departments" title="Departments" initialItems={departments} />
-        <OrgRegistryManager resource="designations" title="Designations" initialItems={designations} />
-        <OrgRegistryManager resource="locations" title="Locations" initialItems={locations} />
+        <OrgRegistryManager title="Departments" initialItems={departments} />
+        <OrgRegistryManager title="Designations" initialItems={designations} />
+        <OrgRegistryManager title="Locations" initialItems={locations} />
       </div>
 
       <OrgChart data={data} />

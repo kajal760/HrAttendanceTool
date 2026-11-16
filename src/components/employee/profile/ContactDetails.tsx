@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Pencil, Info } from "lucide-react";
 import type { EmployeeOverview } from "@/types/hr";
-import Fact from "./Fact";
 import styles from "./Profile.module.css";
 
 interface EditableFields {
@@ -55,6 +54,7 @@ export default function ContactDetails({ employee: initialEmployee }: ContactDet
   }
 
   function cancelEdit() {
+    setFields(fieldsFrom(employee));
     setEditing(false);
     setError(null);
   }
@@ -107,74 +107,77 @@ export default function ContactDetails({ employee: initialEmployee }: ContactDet
         </div>
       )}
 
-      {editing ? (
-        <>
-          <p className={styles.sectionNote}>Phone, email, addresses, and emergency contact - editable by you.</p>
-          <div className={styles.editFieldGrid}>
-            <label className={styles.editField}>
-              Phone
-              <input value={fields.phone} onChange={(e) => setField("phone", e.target.value)} />
-            </label>
-            <label className={styles.editField}>
-              Personal email
-              <input
-                type="email"
-                value={fields.personalEmail}
-                onChange={(e) => setField("personalEmail", e.target.value)}
-              />
-            </label>
-            <label className={styles.editField}>
-              Current address
-              <input value={fields.currentAddress} onChange={(e) => setField("currentAddress", e.target.value)} />
-            </label>
-            <label className={styles.editField}>
-              Permanent address
-              <input value={fields.permanentAddress} onChange={(e) => setField("permanentAddress", e.target.value)} />
-            </label>
-            <label className={styles.editField}>
-              Emergency contact name
-              <input value={fields.emergencyName} onChange={(e) => setField("emergencyName", e.target.value)} />
-            </label>
-            <label className={styles.editField}>
-              Relation
-              <input value={fields.emergencyRelation} onChange={(e) => setField("emergencyRelation", e.target.value)} />
-            </label>
-            <label className={styles.editField}>
-              Emergency phone
-              <input value={fields.emergencyPhone} onChange={(e) => setField("emergencyPhone", e.target.value)} />
-            </label>
-          </div>
-
-          {error && (
-            <p className={styles.sectionNote} style={{ color: "var(--color-danger)" }}>
-              {error}
-            </p>
-          )}
-
-          <div className={styles.editActions}>
-            <button type="button" className={styles.cancelButton} onClick={cancelEdit} disabled={saving}>
-              Cancel
-            </button>
-            <button type="button" className={styles.saveButton} onClick={handleSave} disabled={saving}>
-              {saving ? "Saving..." : "Save changes"}
-            </button>
-          </div>
-        </>
-      ) : (
-        <div className={styles.factGrid}>
-          <Fact label="Phone" value={employee.phone ?? "-"} />
-          <Fact label="Personal email" value={employee.personalEmail ?? "-"} />
-          <Fact label="Current address" value={employee.currentAddress ?? "-"} />
-          <Fact label="Permanent address" value={employee.permanentAddress ?? "-"} />
-          <Fact label="Emergency contact" value={employee.emergencyContact?.name ?? "-"} />
-          <Fact
-            label="Relation / phone"
-            value={
-              employee.emergencyContact
-                ? `${employee.emergencyContact.relation || "-"} · ${employee.emergencyContact.phone || "-"}`
-                : "-"
-            }
+      <p className={styles.sectionNote}>Phone, email, addresses, and emergency contact - editable by you.</p>
+      <div className={styles.editFieldGrid}>
+        <label className={styles.editField}>
+          Phone
+          <input value={fields.phone} disabled={!editing} onChange={(e) => setField("phone", e.target.value)} />
+        </label>
+        <label className={styles.editField}>
+          Personal email
+          <input
+            type="email"
+            value={fields.personalEmail}
+            disabled={!editing}
+            onChange={(e) => setField("personalEmail", e.target.value)}
           />
+        </label>
+        <label className={styles.editField}>
+          Current address
+          <input
+            value={fields.currentAddress}
+            disabled={!editing}
+            onChange={(e) => setField("currentAddress", e.target.value)}
+          />
+        </label>
+        <label className={styles.editField}>
+          Permanent address
+          <input
+            value={fields.permanentAddress}
+            disabled={!editing}
+            onChange={(e) => setField("permanentAddress", e.target.value)}
+          />
+        </label>
+        <label className={styles.editField}>
+          Emergency contact name
+          <input
+            value={fields.emergencyName}
+            disabled={!editing}
+            onChange={(e) => setField("emergencyName", e.target.value)}
+          />
+        </label>
+        <label className={styles.editField}>
+          Relation
+          <input
+            value={fields.emergencyRelation}
+            disabled={!editing}
+            onChange={(e) => setField("emergencyRelation", e.target.value)}
+          />
+        </label>
+        <label className={styles.editField}>
+          Emergency phone
+          <input
+            value={fields.emergencyPhone}
+            disabled={!editing}
+            onChange={(e) => setField("emergencyPhone", e.target.value)}
+          />
+        </label>
+      </div>
+
+      {editing && error && (
+        <p className={styles.sectionNote} style={{ color: "var(--color-danger)" }}>
+          {error}
+        </p>
+      )}
+
+      {editing && (
+        <div className={styles.editActions}>
+          <button type="button" className={styles.cancelButton} onClick={cancelEdit} disabled={saving}>
+            Cancel
+          </button>
+          <button type="button" className={styles.saveButton} onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : "Save changes"}
+          </button>
         </div>
       )}
 

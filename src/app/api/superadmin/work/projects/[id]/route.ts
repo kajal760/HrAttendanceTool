@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/backend";
 import { patchProject } from "@/lib/hr/work-store";
+import type { WorkPriority } from "@/types/work";
+import { WORK_PRIORITIES } from "@/types/work";
 
 export const dynamic = "force-dynamic";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const { name, description, memberIds, deadline, departmentName } = body ?? {};
+  const { name, description, memberIds, deadline, departmentName, priority } = body ?? {};
 
   const patch: Record<string, unknown> = {};
   if (name !== undefined) {
@@ -30,14 +33,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
     patch.deadline = deadline || undefined;
   }
-
   if (departmentName !== undefined) {
     patch.departmentName = typeof departmentName === "string" && departmentName.trim() ? departmentName.trim() : undefined;
   }
-
-  const project = await patchProject(id, patch);
-  if (!project) {
-    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  if (priority !== undefined) {
+    if (!(WORK_PRIORITIES as string[]).includes(priority)) {
+      return NextResponse.json({ error: "Invalid priority." }, { status: 400 });
+    }
+    patch.priority = priority as WorkPriority;
   }
-  return NextResponse.json({ project });
+
+  try {
+    const project = await patchProject(id, patch);
+    if (!project) {
+      return NextResponse.json({ error: "Project not found." }, { status: 404 });
+    }
+    return NextResponse.json({ project });
+  } catch (err) {
+    return errorResponse(err);
+  }
 }

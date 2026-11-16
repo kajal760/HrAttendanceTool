@@ -14,13 +14,15 @@ interface OrgChartProps {
 export default function OrgChart({ data }: OrgChartProps) {
   return (
     <div className={styles.chart}>
-      <div className={styles.executiveCard}>
-        <span className={styles.executiveAvatar}>{data.executive.initials}</span>
-        <div>
-          <div className={styles.executiveName}>{data.executive.name}</div>
-          <div className={styles.executiveTitle}>{data.executive.title}</div>
+      {data.executive && (
+        <div className={styles.executiveCard}>
+          <span className={styles.executiveAvatar}>{data.executive.initials}</span>
+          <div>
+            <div className={styles.executiveName}>{data.executive.name}</div>
+            <div className={styles.executiveTitle}>{data.executive.title}</div>
+          </div>
         </div>
-      </div>
+      )}
 
       {data.departments.map((dept, i) => (
         <RevealOnScroll key={dept.name} delayMs={i === 0 ? 0 : 60} className={styles.branch}>

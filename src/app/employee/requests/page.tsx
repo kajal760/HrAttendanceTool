@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getAssetRequests, getRequestRecipients } from "@/lib/employee/mock-data";
+import { getAssetRequests, getRequestRecipients } from "@/lib/employee/dashboard-data";
 import { getLeaveRequestsForEmployee } from "@/lib/hr/leave-store";
 import { requireCurrentEmployee } from "@/lib/auth/current-employee";
 import SectionCard from "@/components/employee/SectionCard";
@@ -7,7 +7,7 @@ import HrRequestPanel from "@/components/employee/HrRequestPanel";
 import AllRequestsHistory from "@/components/employee/AllRequestsHistory";
 
 export const metadata: Metadata = {
-  title: "Requests | HR Attendance",
+  title: "Requests | HumSetu",
 };
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function EmployeeRequestsPage() {
   const employee = await requireCurrentEmployee();
   const [recipients, leaveRequests, assetRequests] = await Promise.all([
-    getRequestRecipients(),
+    getRequestRecipients(employee.id),
     getLeaveRequestsForEmployee(employee.id),
     getAssetRequests(),
   ]);
@@ -37,7 +37,7 @@ export default async function EmployeeRequestsPage() {
           title="Raise a request"
           subtitle="Pick a type, mention who it should go to, and add a summary"
         >
-          <HrRequestPanel recipientOptions={recipients} initialRequests={[]} />
+          <HrRequestPanel recipientOptions={recipients} />
         </SectionCard>
       </div>
 

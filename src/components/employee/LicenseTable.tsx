@@ -20,6 +20,10 @@ interface LicenseTableProps {
 }
 
 export default function LicenseTable({ licenses }: LicenseTableProps) {
+  if (licenses.length === 0) {
+    return <p className={styles.muted}>No software licenses on file.</p>;
+  }
+
   return (
     <table className={styles.table}>
       <thead>

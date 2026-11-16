@@ -1,167 +1,177 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
-import type { LeaveCategory, LeaveRequest, LeaveRequestStatus } from "@/types/employee";
+import { backend, backendRaw } from "@/lib/api/backend";
+import type { ApiLeaveRequest, ApiLeaveSummary, ApiLeaveTotals, ApiLeaveType } from "@/lib/api/types";
+import { getSession } from "@/lib/auth/get-session";
+import type { HalfDaySession, LeaveRequest, LeaveSummary, LeaveTypeOption } from "@/types/employee";
 
-// File-backed JSON store, same convention as `work-store.ts`: Next's dev
-// server (Turbopack) runs route handlers and page components in separate
-// module instances, so a plain in-memory array written by one is invisible
-// to the other - reading from disk each time sidesteps that.
-//
-// This replaces the old employee-side `useLeaveRequests` localStorage hook:
-// for HR to see and approve a request, it has to live on the server, not
-// trapped in the employee's own browser.
+// Leave requests, types and balances - backed by the FastAPI `/leave`
+// endpoints, which enforce the leave policy (yearly limits, half days,
+// sick-leave certificates, maternity rules, holidays/weekends not counted).
+// Errors come back as BackendError with the policy's own message, e.g.
+// "Casual Leave can be at most 4 day(s) per request."
 
-const DATA_DIR = path.join(process.cwd(), ".data");
-const LEAVE_PATH = path.join(DATA_DIR, "leave-requests.json");
-
-const SEED_REQUESTS: LeaveRequest[] = [
-  {
-    id: "lv-1",
-    employeeId: "emp-1024",
-    employeeName: "Aditi Sharma",
-    category: "Compensatory Leave",
-    startDate: "2026-10-12",
-    endDate: "2026-10-12",
-    days: 1,
-    reason: "Worked through the weekend for the release cutover.",
-    status: "Pending",
-    submittedAt: "2026-10-05T14:20:00.000Z",
-  },
-  {
-    id: "lv-2",
-    employeeId: "emp-1024",
-    employeeName: "Aditi Sharma",
-    category: "Casual Leave",
-    startDate: "2026-09-18",
-    endDate: "2026-09-18",
-    days: 1,
-    reason: "Family function.",
-    status: "Approved",
-    submittedAt: "2026-09-10T09:00:00.000Z",
-    decidedBy: "Neha Kapoor",
-    decidedAt: "2026-09-10T12:00:00.000Z",
-  },
-  {
-    id: "lv-3",
-    employeeId: "emp-1024",
-    employeeName: "Aditi Sharma",
-    category: "Sick Leave",
-    startDate: "2026-09-05",
-    endDate: "2026-09-06",
-    days: 2,
-    reason: "Fever, advised rest by doctor.",
-    status: "Approved",
-    submittedAt: "2026-09-04T08:30:00.000Z",
-    decidedBy: "Neha Kapoor",
-    decidedAt: "2026-09-04T10:00:00.000Z",
-  },
-  {
-    id: "lv-4",
-    employeeId: "emp-1024",
-    employeeName: "Aditi Sharma",
-    category: "Casual Leave",
-    startDate: "2026-08-14",
-    endDate: "2026-08-15",
-    days: 2,
-    reason: "Personal travel.",
-    status: "Rejected",
-    submittedAt: "2026-08-10T11:00:00.000Z",
-    decidedBy: "Neha Kapoor",
-    decidedAt: "2026-08-10T15:00:00.000Z",
-    decisionNote: "Too close to the release freeze - please resubmit for after Oct 20.",
-  },
-];
-
-async function readJson<T>(filePath: string, seed: T): Promise<T> {
-  try {
-    const raw = await readFile(filePath, "utf8");
-    return JSON.parse(raw) as T;
-  } catch {
-    return seed;
-  }
+function toRequest(r: ApiLeaveRequest): LeaveRequest {
+  return {
+    id: r.id,
+    employeeId: r.employeeId,
+    employeeName: r.employeeName,
+    category: r.category,
+    startDate: r.startDate,
+    endDate: r.endDate,
+    days: r.days,
+    reason: r.reason,
+    status: r.status,
+    submittedAt: r.submittedAt,
+    decidedBy: r.decidedBy ?? undefined,
+    decidedAt: r.decidedAt ?? undefined,
+    decisionNote: r.decisionNote ?? undefined,
+    halfDaySession: r.halfDaySession ?? undefined,
+    expectedDeliveryDate: r.expectedDeliveryDate ?? undefined,
+    hasAttachment: r.hasAttachment,
+    certificateRequired: r.certificateRequired,
+  };
 }
 
-async function writeJson<T>(filePath: string, data: T): Promise<void> {
-  await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(filePath, JSON.stringify(data, null, 2), "utf8");
+export async function getLeaveTypes(): Promise<LeaveTypeOption[]> {
+  const types = await backend<ApiLeaveType[]>("/leave/types");
+  return types.map((t) => ({
+    id: t.id,
+    code: t.code,
+    name: t.name,
+    description: t.description ?? undefined,
+    annualQuota: t.annualQuota,
+    maxDaysPerRequest: t.maxDaysPerRequest,
+    allowHalfDay: t.allowHalfDay,
+    certificateRequiredAfterDays: t.certificateRequiredAfterDays,
+    needsExpectedDeliveryDate: t.maxDaysBeforeEvent !== null,
+  }));
 }
 
-function newId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+// Admin leave-type editor: every type (including inactive ones), with the
+// full set of policy fields - `getLeaveTypes()` above only maps the subset
+// the apply form needs.
+export async function getLeaveTypesAdmin(): Promise<ApiLeaveType[]> {
+  return backend<ApiLeaveType[]>("/leave/types", { query: { includeInactive: true } });
 }
 
+export interface LeaveTypePatch {
+  description?: string | null;
+  annualQuota?: number | null;
+  minDaysPerRequest?: number | null;
+  maxDaysPerRequest?: number | null;
+  allowHalfDay?: boolean;
+  certificateRequiredAfterDays?: number | null;
+  perOccurrenceDays?: number | null;
+  maxOccurrences?: number | null;
+  maxDaysBeforeEvent?: number | null;
+  isActive?: boolean;
+}
+
+// `code`/`name` aren't editable - the backend's schema doesn't expose them.
+export async function patchLeaveType(id: string, patch: LeaveTypePatch): Promise<ApiLeaveType> {
+  return backend<ApiLeaveType>(`/leave/types/${id}`, { method: "PATCH", body: patch });
+}
+
+// Admin/HR: every request. An Employee only ever gets their own.
 export async function getLeaveRequests(): Promise<LeaveRequest[]> {
-  return readJson(LEAVE_PATH, SEED_REQUESTS);
+  const session = await getSession();
+  const path = session?.role === "Employee" ? "/leave/me/requests" : "/leave/requests";
+  return (await backend<ApiLeaveRequest[]>(path)).map(toRequest);
 }
 
 export async function getLeaveRequestsForEmployee(employeeId: string): Promise<LeaveRequest[]> {
-  const list = await getLeaveRequests();
-  return list.filter((r) => r.employeeId === employeeId);
+  const session = await getSession();
+  const requests =
+    session?.employeeId === employeeId
+      ? await backend<ApiLeaveRequest[]>("/leave/me/requests")
+      : await backend<ApiLeaveRequest[]>("/leave/requests", { query: { employeeId } });
+  return requests.map(toRequest);
 }
 
-function rangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string): boolean {
-  return aStart <= bEnd && bStart <= aEnd;
+function toSummary(s: ApiLeaveSummary): LeaveSummary {
+  return {
+    totalAllocated: s.totalAllocated,
+    totalUsed: s.totalUsed,
+    totalRemaining: s.totalRemaining,
+    percentUsed: s.percentUsed,
+    // Types without a yearly quota (maternity) show their per-occasion
+    // entitlement as "allocated" so the donut still has a scale.
+    byType: s.byType.map((b) => ({
+      type: b.type,
+      allocated: b.allocated ?? 0,
+      used: b.used,
+      remaining: b.remaining ?? 0,
+    })),
+  };
+}
+
+// Balances for the calendar year - computed by the backend from approved
+// days against each type's yearly quota. (Pending days count against
+// `remaining` there too, so an employee can't over-apply.)
+export async function getLeaveSummary(employeeId: string, year?: number): Promise<LeaveSummary> {
+  const session = await getSession();
+  const path = session?.employeeId === employeeId ? "/leave/me/summary" : `/leave/employees/${employeeId}/summary`;
+  return toSummary(await backend<ApiLeaveSummary>(path, { query: { year } }));
+}
+
+// Admin/HR: every active employee's totals in one call.
+export async function getAllLeaveTotals(year?: number): Promise<ApiLeaveTotals[]> {
+  return backend<ApiLeaveTotals[]>("/leave/summaries", { query: { year } });
 }
 
 export interface NewLeaveRequestInput {
-  employeeId: string;
-  employeeName: string;
-  category: LeaveCategory;
+  leaveTypeId: string;
   startDate: string;
   endDate: string;
-  days: number;
+  halfDaySession?: HalfDaySession;
+  expectedDeliveryDate?: string;
   reason: string;
 }
 
-// Rejects a new request that overlaps one of the employee's own
-// Pending/Approved requests - a Rejected one doesn't block a resubmission.
-export async function addLeaveRequest(input: NewLeaveRequestInput): Promise<LeaveRequest | "overlap"> {
-  const list = await getLeaveRequests();
-  const hasOverlap = list.some(
-    (r) =>
-      r.employeeId === input.employeeId &&
-      r.status !== "Rejected" &&
-      rangesOverlap(r.startDate, r.endDate, input.startDate, input.endDate),
-  );
-  if (hasOverlap) return "overlap";
-
-  const request: LeaveRequest = {
-    id: newId("lv"),
-    employeeId: input.employeeId,
-    employeeName: input.employeeName,
-    category: input.category,
-    startDate: input.startDate,
-    endDate: input.endDate,
-    days: input.days,
-    reason: input.reason,
-    status: "Pending",
-    submittedAt: new Date().toISOString(),
-  };
-  await writeJson(LEAVE_PATH, [request, ...list]);
-  return request;
+// The signed-in employee's own request (the backend takes the employee
+// from the token, so nobody can apply on someone else's behalf).
+export async function addLeaveRequest(input: NewLeaveRequestInput): Promise<LeaveRequest> {
+  return toRequest(await backend<ApiLeaveRequest>("/leave/me/requests", { method: "POST", body: input }));
 }
 
-// HR's approve/reject action - only works from Pending, so a request can't
-// be decided twice.
+export interface LeavePreview {
+  days: number;
+  certificateRequired: boolean;
+  remainingAfter: number | null;
+}
+
+// Dry run of `addLeaveRequest`: the day count, or the policy error it would hit.
+export async function previewLeaveRequest(input: NewLeaveRequestInput): Promise<LeavePreview> {
+  return backend<LeavePreview>("/leave/me/requests/preview", { method: "POST", body: input });
+}
+
+export async function cancelLeaveRequest(id: string): Promise<LeaveRequest> {
+  return toRequest(await backend<ApiLeaveRequest>(`/leave/me/requests/${id}/cancel`, { method: "POST" }));
+}
+
+export async function uploadLeaveAttachment(id: string, file: File): Promise<LeaveRequest> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  return toRequest(
+    await backend<ApiLeaveRequest>(`/leave/me/requests/${id}/attachment`, { method: "POST", form }),
+  );
+}
+
+export async function downloadLeaveAttachment(id: string): Promise<Response> {
+  return backendRaw(`/leave/requests/${id}/attachment`);
+}
+
+// HR's approve/reject - the backend only allows it from Pending, refuses
+// HR deciding their own request, and blocks approving sick leave that
+// needs a certificate until one is attached.
 export async function decideLeaveRequest(
   id: string,
-  status: Exclude<LeaveRequestStatus, "Pending">,
-  decidedBy: string,
+  status: "Approved" | "Rejected",
   note?: string,
-): Promise<LeaveRequest | null | "not-pending"> {
-  const list = await getLeaveRequests();
-  const index = list.findIndex((r) => r.id === id);
-  if (index === -1) return null;
-  if (list[index].status !== "Pending") return "not-pending";
-
-  const updated: LeaveRequest = {
-    ...list[index],
-    status,
-    decidedBy,
-    decidedAt: new Date().toISOString(),
-    decisionNote: note,
-  };
-  list[index] = updated;
-  await writeJson(LEAVE_PATH, list);
-  return updated;
+): Promise<LeaveRequest> {
+  return toRequest(
+    await backend<ApiLeaveRequest>(`/leave/requests/${id}/decision`, {
+      method: "POST",
+      body: { status, note: note ?? null },
+    }),
+  );
 }

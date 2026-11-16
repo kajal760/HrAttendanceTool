@@ -89,6 +89,11 @@
   background: var(--color-danger-bg);
 }
 
+.badge-cancelled {
+  color: var(--color-text-muted);
+  background: var(--color-border);
+}
+
 .empty {
   font-size: 13px;
   color: var(--color-text-muted);

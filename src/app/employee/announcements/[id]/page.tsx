@@ -7,7 +7,7 @@ import { announcementStatus, resolveAudience } from "@/lib/announcements/status"
 import EmployeeAnnouncementReader from "@/components/employee/EmployeeAnnouncementReader";
 
 export const metadata: Metadata = {
-  title: "Announcement | HR Attendance",
+  title: "Announcement | HumSetu",
 };
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export default async function EmployeeAnnouncementPage({ params }: { params: Pro
   const [me, announcement, employees] = await Promise.all([
     requireCurrentEmployee(),
     getAnnouncement(id),
-    getEmployeeOverviews(),
+    getEmployeeOverviews().catch(() => []),
   ]);
   if (!announcement) notFound();
 

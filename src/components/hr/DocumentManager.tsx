@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { FileText, Trash2, Upload } from "lucide-react";
 import { DOCUMENT_CATEGORIES, type CompanyDocument, type DocumentCategory } from "@/types/documents";
 import styles from "./DocumentManager.module.css";
@@ -33,7 +33,18 @@ export default function DocumentManager({ initialDocuments }: DocumentManagerPro
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<DocumentCategory | "All">("All");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const filteredDocuments = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return documents.filter((doc) => {
+      if (typeFilter !== "All" && doc.category !== typeFilter) return false;
+      if (query && !doc.title.toLowerCase().includes(query)) return false;
+      return true;
+    });
+  }, [documents, search, typeFilter]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -114,8 +125,31 @@ export default function DocumentManager({ initialDocuments }: DocumentManagerPro
       </form>
       {error && <div className={styles.error}>{error}</div>}
 
+      <div className={styles.filterRow}>
+        <input
+          type="text"
+          placeholder="Search by name..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className={styles.searchInput}
+          aria-label="Search documents by name"
+        />
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value as DocumentCategory | "All")}
+          aria-label="Filter by type"
+        >
+          <option value="All">All types</option>
+          {DOCUMENT_CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className={styles.list}>
-        {documents.map((doc) => (
+        {filteredDocuments.map((doc) => (
           <div key={doc.id} className={styles.row}>
             <span className={styles.iconWrap}>
               <FileText size={18} strokeWidth={2} />
@@ -142,8 +176,10 @@ export default function DocumentManager({ initialDocuments }: DocumentManagerPro
             </button>
           </div>
         ))}
-        {documents.length === 0 && (
-          <div className={styles.empty}>No documents uploaded yet.</div>
+        {filteredDocuments.length === 0 && (
+          <div className={styles.empty}>
+            {documents.length === 0 ? "No documents uploaded yet." : "No documents match your search."}
+          </div>
         )}
       </div>
     </div>

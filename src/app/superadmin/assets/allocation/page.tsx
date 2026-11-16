@@ -4,7 +4,7 @@ import { getEmployeeOverviews } from "@/lib/hr/employee-store";
 import AssetsView from "@/components/hr/assets/AssetsView";
 
 export const metadata: Metadata = {
-  title: "Asset Allocation | HR Attendance",
+  title: "Asset Allocation | HumSetu",
 };
 
 export const dynamic = "force-dynamic";

@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import { getDepartments } from "@/lib/hr/department-store";
 import { getEmployeeOverviews } from "@/lib/hr/employee-store";
 import { getProjects } from "@/lib/hr/work-store";
-import DepartmentGrid, { type DepartmentSummary } from "@/components/hr/DepartmentGrid";
+import { getOrgRegistry } from "@/lib/hr/org-registry-store";
+import { getSession } from "@/lib/auth/get-session";
+import DepartmentDesignationView from "@/components/hr/DepartmentDesignationView";
+import type { DepartmentSummary } from "@/components/hr/DepartmentGrid";
 
 export const metadata: Metadata = {
-  title: "Departments | HR Attendance",
+  title: "Department & Designation | HumSetu",
 };
 
 export const dynamic = "force-dynamic";
@@ -16,10 +19,12 @@ function average(values: number[]): number {
 }
 
 export default async function DepartmentPage() {
-  const [departments, employees, projects] = await Promise.all([
+  const [departments, employees, projects, designations, session] = await Promise.all([
     getDepartments(),
     getEmployeeOverviews(),
     getProjects(),
+    getOrgRegistry("designations"),
+    getSession(),
   ]);
 
   const employeesById = new Map(employees.map((e) => [e.id, e]));
@@ -42,12 +47,18 @@ export default async function DepartmentPage() {
   return (
     <>
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Departments</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Department & Designation</h1>
         <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0 }}>
-          Headcount, head, attendance, performance, and projects for every department - click one for the full breakdown.
+          Headcount, head, attendance, performance, and projects for every department, or the designation registry
+          used across employee records - switch between the two below.
         </p>
       </div>
-      <DepartmentGrid departments={summaries} employees={employees} />
+      <DepartmentDesignationView
+        departments={summaries}
+        employees={employees}
+        designations={designations}
+        designationsReadOnly={session?.role !== "HR"}
+      />
     </>
   );
 }

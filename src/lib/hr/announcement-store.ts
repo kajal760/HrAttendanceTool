@@ -1,164 +1,67 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { backend, backendRaw, BackendError } from "@/lib/api/backend";
+import type { ApiAnnouncement } from "@/lib/api/types";
 import type {
   Announcement,
-  AnnouncementAttachment,
   AnnouncementAudience,
   AnnouncementCreatorRole,
-  AnnouncementHistoryEvent,
+  AnnouncementLifecycle,
   AnnouncementPriority,
   AnnouncementType,
 } from "@/types/announcement";
 
-// File-backed JSON store, same convention as `employee-store.ts`/
-// `work-store.ts`: Next's dev server (Turbopack) runs route handlers and
-// page components in separate module instances, so reading fresh from disk
-// on every call sidesteps a plain in-memory array being invisible across
-// them. Attachments are real uploaded files under `public/uploads/
-// announcements`, same idea as `document-store.ts`.
+// Backed by the FastAPI `/announcements` endpoints. `GET /announcements` and
+// `GET /announcements/{id}` branch server-side on the caller's role: Admin/HR
+// get every announcement (incl. Draft/Archived), an Employee gets only the
+// Live ones whose audience actually targets them - so this store needs no
+// separate "my announcements" variant, every existing call site (admin list/
+// detail pages, the employee feed, the nav unread badge, search, logs)
+// already gets the right slice for whoever's signed in.
 
-const DATA_DIR = path.join(process.cwd(), ".data");
-const INDEX_PATH = path.join(DATA_DIR, "announcements.json");
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "announcements");
-const PUBLIC_PATH_PREFIX = "/uploads/announcements";
-
-function sanitizeFileName(name: string): string {
-  return name.replace(/[^a-zA-Z0-9._-]/g, "_");
-}
-
-function newId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-}
-
-const SEED_ANNOUNCEMENTS: Announcement[] = [
-  {
-    id: "ann-seed-1",
-    title: "New Attendance Policy",
-    content:
-      "A new attendance policy will be effective from 1 October 2026. Core hours move to 9:30 AM - 6:30 PM, and remote work now requires manager approval per instance rather than a blanket weekly allowance. Please review the attached document before the effective date.",
-    type: "Attendance",
-    priority: "Important",
-    audience: { type: "Everyone" },
-    lifecycle: "Live",
-    requireAcknowledgement: true,
-    publishAt: "2026-09-25T09:00:00.000Z",
-    attachments: [],
-    createdByName: "HR",
-    createdByRole: "HR",
-    createdAt: "2026-09-24T14:00:00.000Z",
-    updatedAt: "2026-09-25T09:00:00.000Z",
-    reads: [
-      { employeeId: "emp-1024", readAt: "2026-09-25T10:00:00.000Z" },
-      { employeeId: "emp-1032", readAt: "2026-09-25T11:00:00.000Z" },
-    ],
-    acknowledgements: [{ employeeId: "emp-1024", acknowledgedAt: "2026-09-25T10:01:00.000Z" }],
-    history: [
-      { id: "ann-seed-1-h1", timestamp: "2026-09-24T14:00:00.000Z", type: "Created", performedBy: "HR (HR)" },
-      { id: "ann-seed-1-h2", timestamp: "2026-09-25T09:00:00.000Z", type: "Published", performedBy: "HR (HR)" },
-    ],
-  },
-  {
-    id: "ann-seed-2",
-    title: "Mandatory Security Training on Friday",
-    content:
-      "The Engineering team must complete the annual security awareness training this Friday. The session covers phishing recognition, credential hygiene, and the updated incident-reporting process. Attendance will be tracked.",
-    type: "Training",
-    priority: "Urgent",
-    audience: { type: "Department", department: "Engineering" },
-    lifecycle: "Live",
-    requireAcknowledgement: false,
-    publishAt: "2026-09-28T08:00:00.000Z",
-    attachments: [],
-    createdByName: "Super Admin",
-    createdByRole: "Super Admin",
-    createdAt: "2026-09-27T16:00:00.000Z",
-    updatedAt: "2026-09-28T08:00:00.000Z",
-    reads: [{ employeeId: "emp-1024", readAt: "2026-09-28T09:00:00.000Z" }],
-    acknowledgements: [],
-    history: [
-      { id: "ann-seed-2-h1", timestamp: "2026-09-27T16:00:00.000Z", type: "Created", performedBy: "Super Admin (Super Admin)" },
-      { id: "ann-seed-2-h2", timestamp: "2026-09-28T08:00:00.000Z", type: "Published", performedBy: "Super Admin (Super Admin)" },
-    ],
-  },
-  {
-    id: "ann-seed-3",
-    title: "Company Holiday - Office Closed",
-    content: "The office will be closed on 2 October for a public holiday. Client-facing teams should set their status accordingly.",
-    type: "Holiday",
-    priority: "Normal",
-    audience: { type: "Everyone" },
-    lifecycle: "Live",
-    requireAcknowledgement: false,
-    publishAt: "2026-09-29T09:00:00.000Z",
-    expiresAt: "2026-10-03T00:00:00.000Z",
-    attachments: [],
-    createdByName: "HR",
-    createdByRole: "HR",
-    createdAt: "2026-09-29T09:00:00.000Z",
-    updatedAt: "2026-09-29T09:00:00.000Z",
-    reads: [],
-    acknowledgements: [],
-    history: [
-      { id: "ann-seed-3-h1", timestamp: "2026-09-29T09:00:00.000Z", type: "Created", performedBy: "HR (HR)" },
-      { id: "ann-seed-3-h2", timestamp: "2026-09-29T09:00:00.000Z", type: "Published", performedBy: "HR (HR)" },
-    ],
-  },
-  {
-    id: "ann-seed-4",
-    title: "Draft: Updated Leave Policy",
-    content: "Draft notes - revising carry-forward limits for casual leave. Not ready to publish yet.",
-    type: "Policy",
-    priority: "Important",
-    audience: { type: "Everyone" },
-    lifecycle: "Draft",
-    requireAcknowledgement: true,
-    publishAt: new Date().toISOString(),
-    attachments: [],
-    createdByName: "HR",
-    createdByRole: "HR",
-    createdAt: "2026-09-29T12:00:00.000Z",
-    updatedAt: "2026-09-29T12:00:00.000Z",
-    reads: [],
-    acknowledgements: [],
-    history: [{ id: "ann-seed-4-h1", timestamp: "2026-09-29T12:00:00.000Z", type: "Created", performedBy: "HR (HR)" }],
-  },
-];
-
-async function readIndex(): Promise<Announcement[]> {
-  try {
-    const raw = await readFile(INDEX_PATH, "utf8");
-    return JSON.parse(raw) as Announcement[];
-  } catch {
-    return SEED_ANNOUNCEMENTS;
-  }
-}
-
-async function writeIndex(list: Announcement[]): Promise<void> {
-  await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(INDEX_PATH, JSON.stringify(list, null, 2), "utf8");
+function toAnnouncement(a: ApiAnnouncement): Announcement {
+  return {
+    id: a.id,
+    title: a.title,
+    content: a.content,
+    type: a.type as AnnouncementType,
+    priority: a.priority as AnnouncementPriority,
+    audience: {
+      type: a.audience.type,
+      department: a.audience.department ?? undefined,
+      managerId: a.audience.managerId ?? undefined,
+      employeeIds: a.audience.employeeIds ?? undefined,
+    },
+    lifecycle: a.lifecycle as AnnouncementLifecycle,
+    publishAt: a.publishAt,
+    expiresAt: a.expiresAt ?? undefined,
+    attachments: a.attachments.map((att) => ({
+      id: att.id,
+      name: att.name,
+      url: `/api/announcements/${a.id}/attachments/${att.id}`,
+      sizeBytes: att.sizeBytes,
+      contentType: att.contentType,
+    })),
+    createdByName: a.createdByName,
+    // No backend "Manager" login role exists (Admin/HR/Employee only), so this
+    // is "Super Admin" or "HR" in practice - see AnnouncementCreatorRole.
+    createdByRole: (a.createdByRole ?? "Super Admin") as AnnouncementCreatorRole,
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt,
+    reads: a.reads,
+    history: a.history.map((h) => ({ id: h.id, timestamp: h.timestamp, type: h.type, performedBy: h.performedBy })),
+  };
 }
 
 export async function getAnnouncements(): Promise<Announcement[]> {
-  return readIndex();
+  return (await backend<ApiAnnouncement[]>("/announcements")).map(toAnnouncement);
 }
 
 export async function getAnnouncement(id: string): Promise<Announcement | null> {
-  const list = await readIndex();
-  return list.find((a) => a.id === id) ?? null;
-}
-
-export async function saveAttachment(fileName: string, fileBytes: Uint8Array, contentType: string): Promise<AnnouncementAttachment> {
-  const id = newId("att");
-  const storedFileName = `${id}-${sanitizeFileName(fileName)}`;
-  await mkdir(UPLOAD_DIR, { recursive: true });
-  await writeFile(path.join(UPLOAD_DIR, storedFileName), fileBytes);
-  return {
-    id,
-    name: fileName,
-    url: `${PUBLIC_PATH_PREFIX}/${storedFileName}`,
-    sizeBytes: fileBytes.byteLength,
-    contentType,
-  };
+  try {
+    return toAnnouncement(await backend<ApiAnnouncement>(`/announcements/${id}`));
+  } catch (err) {
+    if (err instanceof BackendError && err.status === 404) return null;
+    throw err;
+  }
 }
 
 export interface NewAnnouncementInput {
@@ -167,122 +70,68 @@ export interface NewAnnouncementInput {
   type: AnnouncementType;
   priority: AnnouncementPriority;
   audience: AnnouncementAudience;
-  requireAcknowledgement: boolean;
   publishAt: string;
   expiresAt?: string;
-  attachments: AnnouncementAttachment[];
-  createdByName: string;
-  createdByRole: AnnouncementCreatorRole;
   saveAsDraft: boolean;
 }
 
-function newEventId(): string {
-  return `evt-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-}
-
 export async function addAnnouncement(input: NewAnnouncementInput): Promise<Announcement> {
-  const now = new Date().toISOString();
-  const performedBy = `${input.createdByName} (${input.createdByRole})`;
-  const history: AnnouncementHistoryEvent[] = [
-    { id: newEventId(), timestamp: now, type: "Created", performedBy },
-  ];
-  if (!input.saveAsDraft) {
-    const isScheduled = new Date(input.publishAt) > new Date(now);
-    history.push({ id: newEventId(), timestamp: now, type: isScheduled ? "Scheduled" : "Published", performedBy });
+  return toAnnouncement(
+    await backend<ApiAnnouncement>("/announcements", {
+      method: "POST",
+      body: {
+        title: input.title,
+        content: input.content,
+        type: input.type,
+        priority: input.priority,
+        audience: input.audience,
+        requireAcknowledgement: false,
+        publishAt: input.publishAt,
+        expiresAt: input.expiresAt ?? null,
+        saveAsDraft: input.saveAsDraft,
+      },
+    }),
+  );
+}
+
+// Attached after creation (separate multipart endpoint, same convention as
+// the leave request's attachment upload) - one call per file.
+export async function addAnnouncementAttachment(id: string, file: File): Promise<Announcement> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  return toAnnouncement(await backend<ApiAnnouncement>(`/announcements/${id}/attachments`, { method: "POST", form }));
+}
+
+export async function downloadAnnouncementAttachment(id: string, attachmentId: string): Promise<Response> {
+  return backendRaw(`/announcements/${id}/attachments/${attachmentId}`);
+}
+
+export interface AnnouncementPatch {
+  title?: string;
+  content?: string;
+  type?: AnnouncementType;
+  priority?: AnnouncementPriority;
+  audience?: AnnouncementAudience;
+  publishAt?: string;
+  expiresAt?: string | null;
+  lifecycle?: AnnouncementLifecycle;
+}
+
+export async function patchAnnouncement(id: string, patch: AnnouncementPatch): Promise<Announcement | null> {
+  try {
+    return toAnnouncement(await backend<ApiAnnouncement>(`/announcements/${id}`, { method: "PATCH", body: patch }));
+  } catch (err) {
+    if (err instanceof BackendError && err.status === 404) return null;
+    throw err;
   }
-
-  const announcement: Announcement = {
-    id: newId("ann"),
-    title: input.title,
-    content: input.content,
-    type: input.type,
-    priority: input.priority,
-    audience: input.audience,
-    lifecycle: input.saveAsDraft ? "Draft" : "Live",
-    requireAcknowledgement: input.requireAcknowledgement,
-    publishAt: input.publishAt,
-    expiresAt: input.expiresAt,
-    attachments: input.attachments,
-    createdByName: input.createdByName,
-    createdByRole: input.createdByRole,
-    createdAt: now,
-    updatedAt: now,
-    reads: [],
-    acknowledgements: [],
-    history,
-  };
-
-  const list = await readIndex();
-  await writeIndex([announcement, ...list]);
-  return announcement;
 }
 
-export type AnnouncementPatch = Partial<
-  Pick<
-    Announcement,
-    | "title"
-    | "content"
-    | "type"
-    | "priority"
-    | "audience"
-    | "lifecycle"
-    | "requireAcknowledgement"
-    | "publishAt"
-    | "expiresAt"
-    | "attachments"
-  >
->;
-
-export async function patchAnnouncement(
-  id: string,
-  patch: AnnouncementPatch,
-  event?: Omit<AnnouncementHistoryEvent, "id" | "timestamp">,
-): Promise<Announcement | null> {
-  const list = await readIndex();
-  const index = list.findIndex((a) => a.id === id);
-  if (index === -1) return null;
-
-  const current = list[index];
-  const updated: Announcement = { ...current, ...patch, updatedAt: new Date().toISOString() };
-  if (event) {
-    const entry: AnnouncementHistoryEvent = { id: newEventId(), timestamp: new Date().toISOString(), ...event };
-    updated.history = [entry, ...current.history];
+// The signed-in employee's own read receipt - idempotent.
+export async function recordRead(id: string): Promise<Announcement | null> {
+  try {
+    return toAnnouncement(await backend<ApiAnnouncement>(`/announcements/${id}/read`, { method: "POST" }));
+  } catch (err) {
+    if (err instanceof BackendError && err.status === 404) return null;
+    throw err;
   }
-  list[index] = updated;
-  await writeIndex(list);
-  return updated;
-}
-
-export async function recordRead(id: string, employeeId: string): Promise<Announcement | null> {
-  const list = await readIndex();
-  const index = list.findIndex((a) => a.id === id);
-  if (index === -1) return null;
-
-  const current = list[index];
-  if (current.reads.some((r) => r.employeeId === employeeId)) return current;
-
-  const updated: Announcement = {
-    ...current,
-    reads: [...current.reads, { employeeId, readAt: new Date().toISOString() }],
-  };
-  list[index] = updated;
-  await writeIndex(list);
-  return updated;
-}
-
-export async function recordAcknowledgement(id: string, employeeId: string): Promise<Announcement | null> {
-  const list = await readIndex();
-  const index = list.findIndex((a) => a.id === id);
-  if (index === -1) return null;
-
-  const current = list[index];
-  if (current.acknowledgements.some((a) => a.employeeId === employeeId)) return current;
-
-  const updated: Announcement = {
-    ...current,
-    acknowledgements: [...current.acknowledgements, { employeeId, acknowledgedAt: new Date().toISOString() }],
-  };
-  list[index] = updated;
-  await writeIndex(list);
-  return updated;
 }

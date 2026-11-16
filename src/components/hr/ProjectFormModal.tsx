@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { X } from "lucide-react";
 import type { EmployeeOverview } from "@/types/hr";
-import type { Project } from "@/types/work";
+import type { Project, WorkPriority } from "@/types/work";
+import { WORK_PRIORITIES } from "@/types/work";
 import styles from "./FormModal.module.css";
 import { useDepartmentNames } from "./useDepartmentNames";
 
@@ -13,6 +14,7 @@ interface FormState {
   description: string;
   deadline: string;
   departmentName: string;
+  priority: WorkPriority;
 }
 
 function formFromProject(project?: Project): FormState {
@@ -21,6 +23,7 @@ function formFromProject(project?: Project): FormState {
     description: project?.description ?? "",
     deadline: project?.deadline ?? "",
     departmentName: project?.departmentName ?? "",
+    priority: project?.priority ?? "Medium",
   };
 }
 
@@ -71,6 +74,7 @@ export default function ProjectFormModal({ mode, project, employees, onClose, on
         description: form.description.trim() || undefined,
         deadline: form.deadline || undefined,
         departmentName: form.departmentName || undefined,
+        priority: form.priority,
         memberIds,
       };
       const res = await fetch(
@@ -152,6 +156,19 @@ export default function ProjectFormModal({ mode, project, employees, onClose, on
                   : activeNames
                 ).map((d) => (
                   <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </label>
+            <label className={styles.field}>
+              <span>Priority</span>
+              <select
+                value={form.priority}
+                onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value as WorkPriority }))}
+              >
+                {WORK_PRIORITIES.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
                 ))}
               </select>
             </label>

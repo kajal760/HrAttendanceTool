@@ -1,29 +1,22 @@
-import type { AttendanceDayStatus, AttendanceHistory, LeaveStatus } from "@/types/attendance";
+import type { AttendanceHistoryDayStatus, AttendanceHistory, LeaveStatus } from "@/types/attendance";
+import { formatDay } from "@/lib/hr/attendance-format";
 import styles from "./AttendanceHistoryView.module.css";
-
-// Dates arrive as YYYY-MM-DD and are formatted in UTC so server and browser
-// render identical text regardless of timezone.
-function formatDay(iso: string): string {
-  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", {
-    timeZone: "UTC",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 const LEAVE_TONE: Record<LeaveStatus, string> = {
   Pending: "amber",
   Approved: "green",
   Rejected: "red",
+  Cancelled: "gray",
 };
 
-const DAY_TONE: Record<AttendanceDayStatus, string> = {
+const DAY_TONE: Record<AttendanceHistoryDayStatus, string> = {
   Present: "green",
   WFH: "blue",
   Late: "amber",
+  "Half Day": "amber",
   Absent: "red",
   "On Leave": "gray",
+  Holiday: "blue",
 };
 
 export default function AttendanceHistoryView({ data }: { data: AttendanceHistory }) {
@@ -41,7 +34,8 @@ export default function AttendanceHistoryView({ data }: { data: AttendanceHistor
   return (
     <div className={styles.wrap}>
       <p className={styles.note}>
-        Last 30 working days and leave requests. Demo data until the leave and attendance workflows are connected.
+        Last 30 working days and leave requests. Leave requests and On Leave/Holiday days are real; other daily
+        statuses are simulated until a real clock-in/out feed exists.
       </p>
 
       <div className={styles.cards}>

@@ -10,7 +10,7 @@ interface WorkViewToggleProps {
   table: ReactNode;
 }
 
-// A single "Table" button on the Projects, Tasks, and Workload pages. Off
+// A single "Table" button on the Projects and Tasks pages. Off
 // shows the page's normal board; on shows the same records as a table. The
 // table is built from server data, so opening it refreshes that data first
 // (the board keeps its own state, which is already up to date).

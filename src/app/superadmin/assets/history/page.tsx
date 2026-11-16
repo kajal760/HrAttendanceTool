@@ -4,7 +4,7 @@ import { getEmployeeOverviews } from "@/lib/hr/employee-store";
 import AssetHistoryFeed from "@/components/hr/assets/AssetHistoryFeed";
 
 export const metadata: Metadata = {
-  title: "Asset History | HR Attendance",
+  title: "Asset History | HumSetu",
 };
 
 export const dynamic = "force-dynamic";

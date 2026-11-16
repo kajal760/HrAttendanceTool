@@ -9,17 +9,6 @@ import EmployeeFormModal from "./EmployeeFormModal";
 import { useDepartmentNames } from "./useDepartmentNames";
 import styles from "./EmployeeGrid.module.css";
 
-type SortField = "firstName" | "lastName" | "department" | "joinedOn" | "age" | "salary";
-
-const SORT_FIELD_OPTIONS: { value: SortField; label: string }[] = [
-  { value: "firstName", label: "First name" },
-  { value: "lastName", label: "Last name" },
-  { value: "department", label: "Department" },
-  { value: "joinedOn", label: "Date joined" },
-  { value: "age", label: "Age" },
-  { value: "salary", label: "Salary" },
-];
-
 const STATUS_VALUES: EmployeeStatus[] = [
   "Onboarding",
   "Probation",
@@ -55,28 +44,6 @@ function toCsv(rows: EmployeeOverview[]): string {
   return [header, ...lines].join("\n");
 }
 
-function lastNameOf(fullName: string): string {
-  const parts = fullName.trim().split(/\s+/);
-  return parts[parts.length - 1] ?? fullName;
-}
-
-function sortValue(employee: EmployeeOverview, field: SortField): string | number {
-  switch (field) {
-    case "firstName":
-      return employee.name.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
-    case "lastName":
-      return lastNameOf(employee.name).toLowerCase();
-    case "department":
-      return employee.department.toLowerCase();
-    case "joinedOn":
-      return new Date(employee.joinedOn).getTime();
-    case "age":
-      return employee.age;
-    case "salary":
-      return employee.salary;
-  }
-}
-
 interface EmployeeGridProps {
   employees: EmployeeOverview[];
   initialDepartmentFilter?: string;
@@ -88,7 +55,6 @@ interface EmployeeGridProps {
 export default function EmployeeGrid({ employees: initialEmployees, initialDepartmentFilter }: EmployeeGridProps) {
   const [employees, setEmployees] = useState<EmployeeOverview[]>(initialEmployees);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [sortField, setSortField] = useState<SortField>("firstName");
   const [modalMode, setModalMode] = useState<"add" | "edit" | null>(null);
   const [editingEmployee, setEditingEmployee] = useState<EmployeeOverview | null>(null);
 
@@ -125,20 +91,9 @@ export default function EmployeeGrid({ employees: initialEmployees, initialDepar
     });
   }, [employees, query, departmentFilter, designationFilter, locationFilter, statusFilter]);
 
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      const va = sortValue(a, sortField);
-      const vb = sortValue(b, sortField);
-      if (typeof va === "string" && typeof vb === "string") {
-        return va.localeCompare(vb);
-      }
-      return (va as number) - (vb as number);
-    });
-  }, [filtered, sortField]);
-
   function exportCsv() {
     const filename = `employees-${new Date().toISOString().slice(0, 10)}.csv`;
-    const csv = toCsv(sorted);
+    const csv = toCsv(filtered);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -149,7 +104,7 @@ export default function EmployeeGrid({ employees: initialEmployees, initialDepar
     fetch("/api/superadmin/logs/export", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ detail: `${filename} · ${sorted.length} rows` }),
+      body: JSON.stringify({ detail: `${filename} · ${filtered.length} rows` }),
     }).catch(() => {
       // Logging the export is best-effort - the CSV already downloaded either way.
     });
@@ -214,22 +169,6 @@ export default function EmployeeGrid({ employees: initialEmployees, initialDepar
   return (
     <div>
       <div className={styles.toolbar}>
-        <div className={styles.sortControls}>
-          <label htmlFor="employee-sort-field" className={styles.sortLabel}>
-            Sort by
-          </label>
-          <select
-            id="employee-sort-field"
-            value={sortField}
-            onChange={(e) => setSortField(e.target.value as SortField)}
-          >
-            {SORT_FIELD_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
         <div className={styles.toolbarButtons}>
           <button type="button" className={styles.secondaryButton} onClick={exportCsv}>
             <Download size={14} strokeWidth={2.25} />
@@ -312,7 +251,7 @@ export default function EmployeeGrid({ employees: initialEmployees, initialDepar
       )}
 
       <div className={styles.grid}>
-        {sorted.map((employee) => (
+        {filtered.map((employee) => (
           <EmployeeCard
             key={employee.id}
             employee={employee}

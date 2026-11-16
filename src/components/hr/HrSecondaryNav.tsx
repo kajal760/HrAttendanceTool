@@ -5,7 +5,12 @@ import Link from "next/link";
 import { stripBase, withBase } from "@/lib/portal";
 import { usePortalBase } from "./usePortalBase";
 import { SECTION_TABS, findActiveSectionKey } from "./nav-config";
+import type { Role } from "@/types/auth";
 import styles from "@/app/superadmin/layout.module.css";
+
+interface HrSecondaryNavProps {
+  role?: Role;
+}
 
 // Sub-navigation for whichever top-level sidebar section is active - Home,
 // Log, Employees, etc. each get their own tab set (see nav-config.ts), so
@@ -22,12 +27,12 @@ import styles from "@/app/superadmin/layout.module.css";
 // Tab hrefs in SECTION_TABS are base-relative - this compares against
 // `stripBase(pathname)` and renders real links via `withBase`, so the whole
 // thing works identically under `/hr` and `/superadmin`.
-export default function HrSecondaryNav() {
+export default function HrSecondaryNav({ role }: HrSecondaryNavProps) {
   const pathname = usePathname();
   const base = usePortalBase();
   const searchParams = useSearchParams();
   const activeSection = findActiveSectionKey(pathname);
-  const tabs = SECTION_TABS[activeSection] ?? [];
+  const tabs = (SECTION_TABS[activeSection] ?? []).filter((tab) => !role || !tab.hideForRole?.includes(role));
 
   if (tabs.length === 0) return null;
 

@@ -1,175 +1,61 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
-import type { Project, WorkTask, WorkTaskStatus } from "@/types/work";
+import { backend, BackendError } from "@/lib/api/backend";
+import type { ApiProject, ApiWorkTask } from "@/lib/api/types";
+import { resolveRegistryId } from "@/lib/hr/org-registry-store";
+import type { Project, WorkTask, WorkTaskStatus, WorkPriority } from "@/types/work";
 
-// File-backed JSON store, same convention as `employee-store.ts`: Next's dev
-// server (Turbopack) runs route handlers and page components in separate
-// module instances, so a plain in-memory array written by one is invisible
-// to the other - reading from disk each time sidesteps that.
+// Backed by the FastAPI `/work/projects` and `/work/tasks` endpoints.
 
-const DATA_DIR = path.join(process.cwd(), ".data");
-const PROJECTS_PATH = path.join(DATA_DIR, "projects.json");
-const TASKS_PATH = path.join(DATA_DIR, "tasks.json");
-
-const PERFORMED_BY = "Super Admin"; // TODO: read from the session once auth exists.
-
-function daysFromNow(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+function toProject(p: ApiProject): Project {
+  return {
+    id: p.id,
+    name: p.name,
+    description: p.description ?? undefined,
+    memberIds: p.memberIds,
+    departmentName: p.departmentName ?? undefined,
+    deadline: p.deadline ?? undefined,
+    priority: (p.priority as WorkPriority) ?? "Medium",
+    createdOn: p.createdOn,
+    createdBy: p.createdBy,
+  };
 }
 
-const SEED_PROJECTS: Project[] = [
-  {
-    id: "proj-1",
-    name: "HR Attendance Portal",
-    description: "The attendance, leave, and self-service platform itself.",
-    memberIds: ["emp-1024", "emp-1032", "emp-1045", "emp-1051"],
-    deadline: daysFromNow(45),
-    createdOn: daysFromNow(-60),
-    createdBy: PERFORMED_BY,
-  },
-  {
-    id: "proj-2",
-    name: "Internal Tools",
-    description: "Dashboards and utilities used by the engineering team.",
-    memberIds: ["emp-1032", "emp-1051", "emp-1067"],
-    deadline: daysFromNow(30),
-    createdOn: daysFromNow(-40),
-    createdBy: PERFORMED_BY,
-  },
-];
-
-const SEED_TASKS: WorkTask[] = [
-  {
-    id: "task-1",
-    title: "Attendance report export (CSV)",
-    description: "Let HR export a date-ranged attendance report as CSV.",
-    projectId: "proj-1",
-    assigneeIds: ["emp-1024"],
-    deadline: daysFromNow(5),
-    status: "Ongoing",
-    summary: "CSV export endpoint drafted; wiring up date-range filter and testing large exports next.",
-    summaryUpdatedAt: daysFromNow(-2),
-    createdOn: daysFromNow(-12),
-    createdBy: PERFORMED_BY,
-    updatedAt: daysFromNow(-2),
-  },
-  {
-    id: "task-2",
-    title: "Leave approval email templates",
-    projectId: "proj-1",
-    assigneeIds: ["emp-1024", "emp-1045"],
-    deadline: daysFromNow(9),
-    status: "Pending",
-    createdOn: daysFromNow(-8),
-    createdBy: PERFORMED_BY,
-    updatedAt: daysFromNow(-8),
-  },
-  {
-    id: "task-3",
-    title: "Fix geolocation permission fallback",
-    description: "Denied-permission edge case on iOS Safari falls back to manual entry.",
-    projectId: "proj-1",
-    assigneeIds: ["emp-1024"],
-    deadline: daysFromNow(-2),
-    status: "Ongoing",
-    summary: "Blocked on device testing for the denied-permission edge case on iOS Safari.",
-    summaryUpdatedAt: daysFromNow(-5),
-    createdOn: daysFromNow(-10),
-    createdBy: PERFORMED_BY,
-    updatedAt: daysFromNow(-5),
-  },
-  {
-    id: "task-4",
-    title: "Sprint 12 code review",
-    projectId: "proj-2",
-    assigneeIds: ["emp-1024", "emp-1032"],
-    deadline: daysFromNow(-10),
-    status: "Completed",
-    summary: "All review comments resolved and merged to main.",
-    summaryUpdatedAt: daysFromNow(-10),
-    createdOn: daysFromNow(-16),
-    createdBy: PERFORMED_BY,
-    updatedAt: daysFromNow(-10),
-  },
-  {
-    id: "task-5",
-    title: "Design leave-balance API contract",
-    projectId: "proj-1",
-    assigneeIds: ["emp-1032"],
-    deadline: daysFromNow(-14),
-    status: "Completed",
-    summary: "Contract finalized and shared with the frontend team.",
-    summaryUpdatedAt: daysFromNow(-14),
-    createdOn: daysFromNow(-20),
-    createdBy: PERFORMED_BY,
-    updatedAt: daysFromNow(-14),
-  },
-  {
-    id: "task-6",
-    title: "Task dependency graph UI",
-    projectId: "proj-1",
-    assigneeIds: ["emp-1045", "emp-1051"],
-    deadline: daysFromNow(12),
-    status: "Pending",
-    createdOn: daysFromNow(-6),
-    createdBy: PERFORMED_BY,
-    updatedAt: daysFromNow(-6),
-  },
-  {
-    id: "task-7",
-    title: "Quarterly attendance analytics dashboard",
-    projectId: "proj-2",
-    assigneeIds: ["emp-1051"],
-    deadline: daysFromNow(14),
-    status: "Ongoing",
-    summary: "Charting library evaluated; building the filter panel this week.",
-    summaryUpdatedAt: daysFromNow(-3),
-    createdOn: daysFromNow(-18),
-    createdBy: PERFORMED_BY,
-    updatedAt: daysFromNow(-3),
-  },
-  {
-    id: "task-8",
-    title: "Update onboarding checklist copy",
-    projectId: "proj-1",
-    assigneeIds: ["emp-1045"],
-    deadline: daysFromNow(-1),
-    status: "Pending",
-    createdOn: daysFromNow(-9),
-    createdBy: PERFORMED_BY,
-    updatedAt: daysFromNow(-9),
-  },
-];
-
-async function readJson<T>(filePath: string, seed: T): Promise<T> {
-  try {
-    const raw = await readFile(filePath, "utf8");
-    return JSON.parse(raw) as T;
-  } catch {
-    return seed;
-  }
-}
-
-async function writeJson<T>(filePath: string, data: T): Promise<void> {
-  await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(filePath, JSON.stringify(data, null, 2), "utf8");
-}
-
-function newId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+// The backend already resolves `projectName`/`dependsOnTask` server-side,
+// but every existing consumer joins those itself from the plain `getTasks()`/
+// `getProjects()` lists (see `src/lib/employee/task-dependencies.ts`), so
+// those extra fields are just dropped here to keep the same `WorkTask` shape.
+function toTask(t: ApiWorkTask): WorkTask {
+  return {
+    id: t.id,
+    title: t.title,
+    description: t.description ?? undefined,
+    projectId: t.projectId,
+    assigneeIds: t.assigneeIds,
+    deadline: t.deadline,
+    status: t.status,
+    priority: (t.priority as WorkPriority) ?? "Medium",
+    dependsOnTaskId: t.dependsOnTaskId ?? undefined,
+    summary: t.summary ?? undefined,
+    summaryUpdatedAt: t.summaryUpdatedAt ?? undefined,
+    mentionedIds: t.mentionedIds,
+    createdOn: t.createdOn,
+    createdBy: t.createdBy,
+    updatedAt: t.updatedAt,
+  };
 }
 
 // --- Projects ---------------------------------------------------------------
 
 export async function getProjects(): Promise<Project[]> {
-  return readJson(PROJECTS_PATH, SEED_PROJECTS);
+  return (await backend<ApiProject[]>("/work/projects")).map(toProject);
 }
 
 export async function getProject(id: string): Promise<Project | null> {
-  const list = await getProjects();
-  return list.find((p) => p.id === id) ?? null;
+  try {
+    return toProject(await backend<ApiProject>(`/work/projects/${id}`));
+  } catch (err) {
+    if (err instanceof BackendError && err.status === 404) return null;
+    throw err;
+  }
 }
 
 export interface NewProjectInput {
@@ -178,22 +64,29 @@ export interface NewProjectInput {
   memberIds: string[];
   deadline?: string;
   departmentName?: string;
+  priority?: WorkPriority;
+}
+
+async function departmentId(departmentName: string | undefined): Promise<string | null | undefined> {
+  if (departmentName === undefined) return undefined;
+  if (!departmentName) return null;
+  return resolveRegistryId("departments", departmentName);
 }
 
 export async function addProject(input: NewProjectInput): Promise<Project> {
-  const project: Project = {
-    id: newId("proj"),
-    name: input.name,
-    description: input.description,
-    memberIds: input.memberIds,
-    deadline: input.deadline,
-    departmentName: input.departmentName,
-    createdOn: new Date().toISOString(),
-    createdBy: PERFORMED_BY,
-  };
-  const list = await getProjects();
-  await writeJson(PROJECTS_PATH, [project, ...list]);
-  return project;
+  return toProject(
+    await backend<ApiProject>("/work/projects", {
+      method: "POST",
+      body: {
+        name: input.name,
+        description: input.description,
+        memberIds: input.memberIds,
+        deadline: input.deadline,
+        departmentId: await departmentId(input.departmentName),
+        priority: input.priority,
+      },
+    }),
+  );
 }
 
 export interface ProjectPatch {
@@ -202,37 +95,51 @@ export interface ProjectPatch {
   memberIds?: string[];
   deadline?: string;
   departmentName?: string;
+  priority?: WorkPriority;
 }
 
 export async function patchProject(id: string, patch: ProjectPatch): Promise<Project | null> {
-  const list = await getProjects();
-  const index = list.findIndex((p) => p.id === id);
-  if (index === -1) return null;
-  const updated: Project = { ...list[index], ...patch };
-  list[index] = updated;
-  await writeJson(PROJECTS_PATH, list);
-  return updated;
+  const body: Record<string, unknown> = {
+    name: patch.name,
+    description: patch.description,
+    memberIds: patch.memberIds,
+    deadline: patch.deadline,
+    priority: patch.priority,
+  };
+  if (patch.departmentName !== undefined) body.departmentId = await departmentId(patch.departmentName);
+  try {
+    return toProject(await backend<ApiProject>(`/work/projects/${id}`, { method: "PATCH", body }));
+  } catch (err) {
+    if (err instanceof BackendError && err.status === 404) return null;
+    throw err;
+  }
 }
 
 // --- Tasks -------------------------------------------------------------------
 
 export async function getTasks(): Promise<WorkTask[]> {
-  return readJson(TASKS_PATH, SEED_TASKS);
+  return (await backend<ApiWorkTask[]>("/work/tasks")).map(toTask);
 }
 
 export async function getTask(id: string): Promise<WorkTask | null> {
-  const list = await getTasks();
-  return list.find((t) => t.id === id) ?? null;
+  try {
+    return toTask(await backend<ApiWorkTask>(`/work/tasks/${id}`));
+  } catch (err) {
+    if (err instanceof BackendError && err.status === 404) return null;
+    throw err;
+  }
 }
 
-export async function getTasksForEmployee(employeeId: string): Promise<WorkTask[]> {
-  const list = await getTasks();
-  return list.filter((t) => t.assigneeIds.includes(employeeId));
+// Always the signed-in employee's own tasks - the backend takes the employee
+// from the session token (`/work/tasks/me`), not the id passed here, which
+// every call site already passes as its own.
+export async function getTasksForEmployee(_employeeId: string): Promise<WorkTask[]> {
+  return (await backend<ApiWorkTask[]>("/work/tasks/me")).map(toTask);
 }
 
 export async function getTasksForProject(projectId: string): Promise<WorkTask[]> {
-  const list = await getTasks();
-  return list.filter((t) => t.projectId === projectId);
+  const tasks = await getTasks();
+  return tasks.filter((t) => t.projectId === projectId);
 }
 
 export interface NewTaskInput {
@@ -242,30 +149,26 @@ export interface NewTaskInput {
   assigneeIds: string[];
   deadline: string;
   status?: WorkTaskStatus;
+  priority?: WorkPriority;
   dependsOnTaskId?: string;
 }
 
-// Every new task a manager/HR creates starts life owned entirely by them -
-// the only fields an assignee can ever write are `summary`/`mentionedIds`
-// (see `updateTaskSummary`), enforced at the API layer, not here.
 export async function addTask(input: NewTaskInput): Promise<WorkTask> {
-  const now = new Date().toISOString();
-  const task: WorkTask = {
-    id: newId("task"),
-    title: input.title,
-    description: input.description,
-    projectId: input.projectId,
-    assigneeIds: input.assigneeIds,
-    deadline: input.deadline,
-    status: input.status ?? "Pending",
-    dependsOnTaskId: input.dependsOnTaskId,
-    createdOn: now,
-    createdBy: PERFORMED_BY,
-    updatedAt: now,
-  };
-  const list = await getTasks();
-  await writeJson(TASKS_PATH, [task, ...list]);
-  return task;
+  return toTask(
+    await backend<ApiWorkTask>("/work/tasks", {
+      method: "POST",
+      body: {
+        title: input.title,
+        description: input.description,
+        projectId: input.projectId,
+        assigneeIds: input.assigneeIds,
+        deadline: input.deadline,
+        status: input.status,
+        priority: input.priority,
+        dependsOnTaskId: input.dependsOnTaskId,
+      },
+    }),
+  );
 }
 
 export interface TaskPatch {
@@ -275,42 +178,37 @@ export interface TaskPatch {
   assigneeIds?: string[];
   deadline?: string;
   status?: WorkTaskStatus;
+  priority?: WorkPriority;
   dependsOnTaskId?: string | null;
 }
 
-// The manager/HR write path - can touch every field except
-// `summary`/`mentionedIds`.
 export async function patchTask(id: string, patch: TaskPatch): Promise<WorkTask | null> {
-  const list = await getTasks();
-  const index = list.findIndex((t) => t.id === id);
-  if (index === -1) return null;
-  const { dependsOnTaskId, ...rest } = patch;
-  const updated: WorkTask = {
-    ...list[index],
-    ...rest,
-    ...(dependsOnTaskId !== undefined ? { dependsOnTaskId: dependsOnTaskId ?? undefined } : {}),
-    updatedAt: new Date().toISOString(),
-  };
-  list[index] = updated;
-  await writeJson(TASKS_PATH, list);
-  return updated;
+  try {
+    return toTask(await backend<ApiWorkTask>(`/work/tasks/${id}`, { method: "PATCH", body: patch }));
+  } catch (err) {
+    if (err instanceof BackendError && err.status === 404) return null;
+    throw err;
+  }
 }
 
-// The fields an employee can write on their own task - rejected unless
-// they're actually one of its assignees.
+// The fields an employee can write on their own task - the backend 403s
+// (surfaced as BackendError) unless they're actually one of its assignees.
 export async function updateTaskSummary(
   id: string,
-  employeeId: string,
+  _employeeId: string,
   summary: string,
   mentionedIds: string[] = [],
 ): Promise<WorkTask | null | "forbidden"> {
-  const list = await getTasks();
-  const index = list.findIndex((t) => t.id === id);
-  if (index === -1) return null;
-  if (!list[index].assigneeIds.includes(employeeId)) return "forbidden";
-  const now = new Date().toISOString();
-  const updated: WorkTask = { ...list[index], summary, mentionedIds, summaryUpdatedAt: now, updatedAt: now };
-  list[index] = updated;
-  await writeJson(TASKS_PATH, list);
-  return updated;
+  try {
+    return toTask(
+      await backend<ApiWorkTask>(`/work/tasks/${id}/summary`, {
+        method: "PATCH",
+        body: { summary, mentionedIds },
+      }),
+    );
+  } catch (err) {
+    if (err instanceof BackendError && err.status === 404) return null;
+    if (err instanceof BackendError && err.status === 403) return "forbidden";
+    throw err;
+  }
 }

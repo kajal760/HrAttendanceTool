@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { addTimesheetEntry, getTimesheetEntries } from "@/lib/hr/timesheet-store";
-import { getEmployee, getEmployeeOverviews } from "@/lib/hr/employee-store";
+import { errorResponse } from "@/lib/api/backend";
+import { addTimesheetEntry, getMyTimesheetEntries } from "@/lib/hr/timesheet-store";
 import { getSession } from "@/lib/auth/get-session";
 
 export const dynamic = "force-dynamic";
@@ -14,21 +14,16 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const scope = searchParams.get("scope") ?? "mine";
+  const scope = searchParams.get("scope") === "department" ? "department" : "mine";
   const from = searchParams.get("from") ?? undefined;
   const to = searchParams.get("to") ?? undefined;
 
-  if (scope === "department") {
-    const me = await getEmployee(session.employeeId);
-    if (!me) return NextResponse.json({ error: "Employee record not found." }, { status: 404 });
-    const all = await getEmployeeOverviews();
-    const employeeIds = all.filter((e) => e.department === me.department).map((e) => e.id);
-    const entries = await getTimesheetEntries({ from, to, employeeIds });
+  try {
+    const entries = await getMyTimesheetEntries({ scope, from, to });
     return NextResponse.json({ entries });
+  } catch (err) {
+    return errorResponse(err);
   }
-
-  const entries = await getTimesheetEntries({ from, to, employeeIds: [session.employeeId] });
-  return NextResponse.json({ entries });
 }
 
 export async function POST(request: Request) {
@@ -53,22 +48,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "taskId must be a string." }, { status: 400 });
   }
 
-  const result = await addTimesheetEntry({
-    employeeId: session.employeeId,
-    date,
-    hours,
-    description: description.trim(),
-    taskId: taskId || undefined,
-  });
-
-  if (result === "invalid-hours") {
-    return NextResponse.json({ error: "Hours must be between 0.25 and 24." }, { status: 400 });
+  try {
+    const entry = await addTimesheetEntry({
+      date,
+      hours,
+      description: description.trim(),
+      taskId: taskId || undefined,
+    });
+    return NextResponse.json({ entry }, { status: 201 });
+  } catch (err) {
+    return errorResponse(err);
   }
-  if (result === "invalid-task") {
-    return NextResponse.json({ error: "Choose one of your own assigned tasks." }, { status: 400 });
-  }
-  if (result === "day-exceeded") {
-    return NextResponse.json({ error: "That would put this day over 24 hours total." }, { status: 400 });
-  }
-  return NextResponse.json({ entry: result }, { status: 201 });
 }

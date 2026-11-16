@@ -3,7 +3,7 @@ import { TrendingUp } from "lucide-react";
 import ComingSoon from "@/components/hr/ComingSoon";
 
 export const metadata: Metadata = {
-  title: "Performance | HR Attendance",
+  title: "Performance | HumSetu",
 };
 
 export default function PerformancePage() {

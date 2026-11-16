@@ -21,7 +21,10 @@
   max-width: 640px;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
-  background: var(--color-surface);
+  /* Opaque, not the page's translucent --color-surface: this card floats
+     over a dark scrim, and a see-through panel there turns muddy instead
+     of reading as a clean dialog. */
+  background: var(--color-surface-opaque);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
@@ -213,4 +216,46 @@
   background: var(--color-surface);
   color: var(--color-text-muted);
   cursor: pointer;
+}
+
+/* Custom combobox dropdown (e.g. the "Department head" free-type picker) -
+   a native <datalist> is unstyleable and renders with the OS/browser's own
+   dark popup chrome regardless of page CSS, so this replaces it with a
+   plain absolutely-positioned list that actually follows the app's theme. */
+.comboWrap {
+  position: relative;
+}
+
+.comboDropdown {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--color-surface-opaque);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  padding: 4px;
+}
+
+.comboOption {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.comboOption:hover,
+.comboOptionActive {
+  background: var(--color-bg);
 }

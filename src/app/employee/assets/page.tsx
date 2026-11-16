@@ -4,7 +4,8 @@ import {
   getAssetRequests,
   getMyAssets,
   getSoftwareLicenses,
-} from "@/lib/employee/mock-data";
+} from "@/lib/employee/dashboard-data";
+import { requireCurrentEmployee } from "@/lib/auth/current-employee";
 import SectionCard from "@/components/employee/SectionCard";
 import AssetTable from "@/components/employee/AssetTable";
 import LicenseTable from "@/components/employee/LicenseTable";
@@ -12,14 +13,17 @@ import AssetHistoryTable from "@/components/employee/AssetHistoryTable";
 import AssetRequestPanel from "@/components/employee/AssetRequestPanel";
 
 export const metadata: Metadata = {
-  title: "Assets | HR Attendance",
+  title: "Assets | HumSetu",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function EmployeeAssetsPage() {
+  const employee = await requireCurrentEmployee();
   const [assets, licenses, history, requests] = await Promise.all([
-    getMyAssets(),
+    getMyAssets(employee.id),
     getSoftwareLicenses(),
-    getAssetHistory(),
+    getAssetHistory(employee.id),
     getAssetRequests(),
   ]);
 

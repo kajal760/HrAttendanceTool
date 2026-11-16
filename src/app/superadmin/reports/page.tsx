@@ -4,7 +4,7 @@ import DocumentManager from "@/components/hr/DocumentManager";
 import SectionCard from "@/components/employee/SectionCard";
 
 export const metadata: Metadata = {
-  title: "Reports | HR Attendance",
+  title: "Reports | HumSetu",
 };
 
 // The document store is live, mutable, in-memory state - never prerender a

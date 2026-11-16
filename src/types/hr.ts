@@ -240,6 +240,7 @@ export interface Department {
   description?: string;
   headId?: string | null; // an employee id, not necessarily a current member
   archived: boolean;
+  archivedAt?: string | null; // ISO - set by archive, cleared by restore
   createdOn: string; // ISO
 }
 
@@ -281,6 +282,8 @@ export interface OrgChartDepartment {
 }
 
 export interface OrgChartData {
-  executive: { name: string; initials: string; title: string };
+  // No leadership/executive record on the backend yet - omitted rather than
+  // showing a made-up name and title.
+  executive?: { name: string; initials: string; title: string };
   departments: OrgChartDepartment[];
 }

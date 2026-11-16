@@ -5,14 +5,18 @@ import { requireCurrentEmployee } from "@/lib/auth/current-employee";
 import EmployeeProjectBoard from "@/components/employee/EmployeeProjectBoard";
 
 export const metadata: Metadata = {
-  title: "Projects | HR Attendance",
+  title: "Projects | HumSetu",
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function EmployeeProjectsPage() {
   const employee = await requireCurrentEmployee();
-  const [allProjects, tasks, employees] = await Promise.all([getProjects(), getTasks(), getEmployeeOverviews()]);
+  const [allProjects, tasks, employees] = await Promise.all([
+    getProjects().catch(() => []),
+    getTasks().catch(() => []),
+    getEmployeeOverviews().catch(() => []),
+  ]);
   const projects = allProjects.filter((p) => p.memberIds.includes(employee.id));
 
   return (

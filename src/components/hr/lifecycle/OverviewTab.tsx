@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { EmployeeOverview, EmployeeStatus } from "@/types/hr";
-import { currentStage, LIFECYCLE_STAGES, type LifecycleStage } from "./stage";
+import { currentStages, LIFECYCLE_STAGES, type LifecycleStage } from "./stage";
 import { EMPLOYEE_STATUS_TONE, toneClass } from "./badge-tones";
 import styles from "./Lifecycle.module.css";
 import { useDepartmentNames } from "../useDepartmentNames";
@@ -52,7 +52,7 @@ export default function OverviewTab({ employees, managerOptions, onViewLifecycle
       }
       if (departmentFilter && e.department !== departmentFilter) return false;
       if (statusFilter && e.status !== statusFilter) return false;
-      if (stageFilter && currentStage(e) !== stageFilter) return false;
+      if (stageFilter && !currentStages(e).includes(stageFilter)) return false;
       if (managerFilter && e.managerId !== managerFilter) return false;
       if (joinedFrom && e.joinedOn < joinedFrom) return false;
       if (joinedTo && e.joinedOn > joinedTo) return false;
@@ -126,7 +126,7 @@ export default function OverviewTab({ employees, managerOptions, onViewLifecycle
                 </td>
                 <td>{e.department}</td>
                 <td>{e.designation}</td>
-                <td>{currentStage(e)}</td>
+                <td>{currentStages(e).join(", ")}</td>
                 <td>{formatDate(e.joinedOn)}</td>
                 <td>
                   <span className={toneClass(styles, EMPLOYEE_STATUS_TONE[e.status])}>{e.status}</span>

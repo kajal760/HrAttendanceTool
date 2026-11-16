@@ -15,15 +15,17 @@ const MAX_PER_GROUP = 6;
 // site sections, not just data. Relative - prefixed with whichever base
 // (`/hr` or `/superadmin`) the caller is signed in under.
 const PAGES = [
-  { label: "All Employees", href: "/employees" },
+  { label: "Employee Dashboard", href: "/employees" },
+  { label: "All Employees", href: "/employees/directory" },
   { label: "Org Structure", href: "/employees/org" },
   { label: "Employee Lifecycle", href: "/employees/lifecycle" },
   { label: "Department", href: "/employees/department" },
   { label: "Roles & Permissions", href: "/employees/roles" },
   { label: "Work & Projects", href: "/work" },
   { label: "Tasks", href: "/work/tasks" },
-  { label: "Workload", href: "/work/workload" },
-  { label: "Announcements", href: "/announcements" },
+  { label: "Company Updates", href: "/company-updates" },
+  { label: "Announcements", href: "/company-updates/announcements" },
+  { label: "Celebrations", href: "/company-updates/celebrations" },
   { label: "Activity Log", href: "/log" },
   { label: "Reports", href: "/reports" },
 ];

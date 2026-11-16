@@ -3,7 +3,7 @@ import SectionCard from "@/components/employee/SectionCard";
 import AttendanceTracker from "@/components/employee/AttendanceTracker";
 
 export const metadata: Metadata = {
-  title: "Today's Attendance | HR Attendance",
+  title: "Today's Attendance | HumSetu",
 };
 
 export default function EmployeeAttendanceTodayPage() {

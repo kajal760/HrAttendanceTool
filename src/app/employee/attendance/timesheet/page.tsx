@@ -6,7 +6,7 @@ import SectionCard from "@/components/employee/SectionCard";
 import TimesheetPanel from "@/components/employee/TimesheetPanel";
 
 export const metadata: Metadata = {
-  title: "Timesheet | HR Attendance",
+  title: "Timesheet | HumSetu",
 };
 
 export const dynamic = "force-dynamic";
@@ -15,8 +15,8 @@ export default async function EmployeeTimesheetPage() {
   const employee = await requireCurrentEmployee();
   const [myTasks, allTasks, employees] = await Promise.all([
     getTasksForEmployee(employee.id),
-    getTasks(),
-    getEmployeeOverviews(),
+    getTasks().catch(() => []),
+    getEmployeeOverviews().catch(() => []),
   ]);
 
   const employeeNames = Object.fromEntries(employees.map((e) => [e.id, e.name]));

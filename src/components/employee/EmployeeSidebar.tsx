@@ -6,12 +6,13 @@ import {
   LayoutDashboard,
   Clock,
   ListChecks,
-  CalendarDays,
   User,
   FileText,
   Send,
   Megaphone,
   Package,
+  Building2,
+  ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
 import { PRIMARY_NAV, SECONDARY_NAV, findActiveNavKey } from "./nav-config";
@@ -20,13 +21,14 @@ import styles from "@/app/employee/layout.module.css";
 const ICONS: Record<string, LucideIcon> = {
   dashboard: LayoutDashboard,
   attendance: Clock,
-  leave: CalendarDays,
   tasks: ListChecks,
   profile: User,
   documents: FileText,
   requests: Send,
   announcements: Megaphone,
   assets: Package,
+  org: Building2,
+  posh: ShieldAlert,
 };
 
 export default function EmployeeSidebar() {

@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { asServiceAccount } from "@/lib/api/backend";
 import { getEmployeeOverviews } from "@/lib/hr/employee-store";
 import { getSettings } from "@/lib/hr/settings-store";
 import { getTodaysAnniversaries, type UpcomingAnniversary } from "@/lib/hr/anniversaries";
@@ -20,14 +21,20 @@ function renderAnniversaryEmailHtml(person: UpcomingAnniversary): string {
       <h1 style="font-size: 22px;">🎉 Happy ${person.years}-Year Work Anniversary, ${person.name}!</h1>
       <p style="font-size: 15px; line-height: 1.6; color: #333;">
         Congratulations on ${person.years} year${person.years === 1 ? "" : "s"} with us! Thank you for everything
-        you bring to the ${person.department} team, from everyone at HR Attendance.
+        you bring to the ${person.department} team, from everyone at HumSetu.
       </p>
-      <p style="font-size: 15px; color: #333;">&mdash; Team HR Attendance</p>
+      <p style="font-size: 15px; color: #333;">&mdash; Team HumSetu</p>
     </div>
   `;
 }
 
-export async function sendAnniversaryEmails(): Promise<AnniversarySendResult> {
+// Runs from cron / the CLI script with nobody signed in, so it reads the
+// employee directory with the backend service account.
+export function sendAnniversaryEmails(): Promise<AnniversarySendResult> {
+  return asServiceAccount(sendAnniversaryEmailsUnscoped);
+}
+
+async function sendAnniversaryEmailsUnscoped(): Promise<AnniversarySendResult> {
   const settings = await getSettings();
   if (!settings.celebrations.anniversariesEnabled) {
     return { configured: true, sentTo: [], skippedReason: "Disabled in settings" };

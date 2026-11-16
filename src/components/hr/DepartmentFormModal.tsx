@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { X } from "lucide-react";
 import type { Department, EmployeeOverview } from "@/types/hr";
@@ -35,8 +35,10 @@ interface DepartmentFormModalProps {
   onEmployeeCreated?: (employee: EmployeeOverview) => void;
 }
 
-// Add/Edit Department. The head field is a free-type combobox (datalist of
-// existing employees) rather than a plain select - typing a name that
+// Add/Edit Department. The head field is a free-type combobox (a styled
+// dropdown of existing employees, not a native <datalist> - that renders
+// with the browser's own unstyleable dark popup chrome) rather than a plain
+// select - typing a name that
 // doesn't match anyone doesn't block the form, it offers to create that
 // person as a new employee record (name only; department = this one,
 // designation = "Department Head" as a placeholder) so a manager can name a
@@ -58,7 +60,14 @@ export default function DepartmentFormModal({
   const [newHeadCode, setNewHeadCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const headListId = useId();
+  const [headDropdownOpen, setHeadDropdownOpen] = useState(false);
+  const headBlurTimeout = useRef<number | undefined>(undefined);
+
+  const headMatches = useMemo(() => {
+    const query = headInput.trim().toLowerCase();
+    if (!query) return knownEmployees.slice(0, 6);
+    return knownEmployees.filter((e) => e.name.toLowerCase().includes(query)).slice(0, 6);
+  }, [knownEmployees, headInput]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -204,21 +213,44 @@ export default function DepartmentFormModal({
             </label>
             <label className={`${styles.field} ${styles.fieldWide}`}>
               <span>Department head</span>
-              <input
-                type="text"
-                list={headListId}
-                value={headInput}
-                onChange={(e) => {
-                  setHeadInput(e.target.value);
-                  setConfirmingNewHead(null);
-                }}
-                placeholder="Type a name, or pick an existing employee"
-              />
-              <datalist id={headListId}>
-                {knownEmployees.map((emp) => (
-                  <option key={emp.id} value={emp.name} />
-                ))}
-              </datalist>
+              <div className={styles.comboWrap}>
+                <input
+                  type="text"
+                  value={headInput}
+                  onChange={(e) => {
+                    setHeadInput(e.target.value);
+                    setConfirmingNewHead(null);
+                  }}
+                  onFocus={() => {
+                    window.clearTimeout(headBlurTimeout.current);
+                    setHeadDropdownOpen(true);
+                  }}
+                  onBlur={() => {
+                    // Delay so a mousedown on an option registers before closing.
+                    headBlurTimeout.current = window.setTimeout(() => setHeadDropdownOpen(false), 120);
+                  }}
+                  placeholder="Type a name, or pick an existing employee"
+                />
+                {headDropdownOpen && headMatches.length > 0 && (
+                  <div className={styles.comboDropdown}>
+                    {headMatches.map((emp) => (
+                      <button
+                        type="button"
+                        key={emp.id}
+                        className={styles.comboOption}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setHeadInput(emp.name);
+                          setConfirmingNewHead(null);
+                          setHeadDropdownOpen(false);
+                        }}
+                      >
+                        {emp.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </label>
           </div>
 

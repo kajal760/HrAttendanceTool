@@ -1,62 +1,74 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getUpcomingHolidays } from "@/lib/employee/mock-data";
-import { getLeaveRequestsForEmployee } from "@/lib/hr/leave-store";
-import { computeBalances } from "@/lib/hr/leave-balance";
-import { getSettings } from "@/lib/hr/settings-store";
+import { Plus } from "lucide-react";
+import { getLeaveRequestsForEmployee, getLeaveSummary } from "@/lib/hr/leave-store";
+import { LEAVE_WARNING_THRESHOLD } from "@/lib/hr/leave-balance";
 import { requireCurrentEmployee } from "@/lib/auth/current-employee";
 import SectionCard from "@/components/employee/SectionCard";
-import LeaveBalanceList from "@/components/employee/LeaveBalanceList";
+import LeaveLimitAlert from "@/components/employee/LeaveLimitAlert";
+import LeaveCategoryDonutGrid from "@/components/employee/LeaveCategoryDonutGrid";
+import LeaveHistorySection from "@/components/employee/LeaveHistorySection";
 
 export const metadata: Metadata = {
-  title: "Leave Balance | HR Attendance",
+  title: "Leave | HumSetu",
 };
 
 export const dynamic = "force-dynamic";
 
-export default async function EmployeeLeaveBalancePage() {
+// The Leave tab of the combined Attendance & Leave section: a Chart.js
+// summary (allocated vs used per category), a Chart.js history graph that
+// toggles to the existing table view (LeaveHistorySection), and an Apply
+// for Leave button that hands off to the dedicated apply form page rather
+// than embedding it here.
+export default async function EmployeeLeavePage() {
   const employee = await requireCurrentEmployee();
-  const [requests, settings, holidays] = await Promise.all([
+  const [requests, leave] = await Promise.all([
     getLeaveRequestsForEmployee(employee.id),
-    getSettings(),
-    getUpcomingHolidays(),
+    getLeaveSummary(employee.id),
   ]);
-  const leave = computeBalances(requests, employee.id, settings.leaveYearStart);
 
   return (
     <>
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Leave Balance</h1>
-        <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0 }}>
-          Allocated, used, and remaining leave by type. Need time off?{" "}
-          <Link href="/employee/leave/apply" style={{ color: "var(--color-primary)", fontWeight: 600 }}>
-            Apply for leave
-          </Link>
-          .
-        </p>
+      <LeaveLimitAlert percentUsed={leave.percentUsed} totalRemaining={leave.totalRemaining} threshold={LEAVE_WARNING_THRESHOLD} />
+
+      <div style={{ marginBottom: 20, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 4px" }}>Leave</h1>
+          <p style={{ fontSize: 13, color: "var(--color-text-muted)", margin: 0 }}>
+            Your leave summary, history, and balance by type.
+          </p>
+        </div>
+        <Link
+          href="/employee/leave/apply"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 13,
+            fontWeight: 600,
+            padding: "9px 16px",
+            borderRadius: "var(--radius-sm)",
+            background: "var(--color-hr-cta)",
+            color: "var(--color-hr-cta-contrast)",
+            textDecoration: "none",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <Plus size={15} strokeWidth={2.5} /> Apply for Leave
+        </Link>
       </div>
 
       <div style={{ marginBottom: 16 }}>
-        <SectionCard title="Leave balance" subtitle={`${leave.totalAllocated} days/yr allocated`}>
-          <LeaveBalanceList items={leave.byType} />
+        <SectionCard
+          title="Leave summary"
+          subtitle={`${leave.totalUsed} of ${leave.totalAllocated} days used · ${leave.totalRemaining} remaining`}
+        >
+          <LeaveCategoryDonutGrid items={leave.byType} />
         </SectionCard>
       </div>
 
-      <SectionCard title="Upcoming holidays">
-        {holidays.length === 0 ? (
-          <p style={{ fontSize: 13, color: "var(--color-text-muted)" }}>No holidays coming up.</p>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {holidays.map((h) => (
-              <div key={h.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5 }}>
-                <span>{h.name}</span>
-                <span style={{ color: "var(--color-text-muted)" }}>
-                  {new Date(h.date).toLocaleDateString(undefined, { day: "2-digit", month: "short" })}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+      <SectionCard title="Leave history" subtitle="Last 6 months as a graph, or switch to the full table">
+        <LeaveHistorySection requests={requests} />
       </SectionCard>
     </>
   );

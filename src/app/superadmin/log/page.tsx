@@ -4,7 +4,7 @@ import SystemLogViewer from "@/components/hr/SystemLogViewer";
 import type { LogModule } from "@/types/log";
 
 export const metadata: Metadata = {
-  title: "System Log | HR Attendance",
+  title: "System Log | HumSetu",
 };
 
 // The log store is live, mutable, in-memory (+ file-backed export events)

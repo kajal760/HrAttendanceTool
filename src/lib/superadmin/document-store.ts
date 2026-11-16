@@ -1,96 +1,77 @@
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { backend, backendRaw } from "@/lib/api/backend";
+import type { ApiDocument } from "@/lib/api/types";
 import type { CompanyDocument, DocumentCategory } from "@/types/documents";
 
-// TODO: replace with real object storage + a database (S3/Blob + Postgres,
-// say) once one exists. For now, uploaded PDFs are written to
-// `public/uploads/documents` and their metadata to a JSON index file next to
-// them. The index is read fresh on every call rather than cached in a module
-// variable: Next's dev server (Turbopack) runs route handlers and page
-// components in separate module instances, so a plain in-memory array
-// written by one is invisible to the other - reading from disk each time
-// sidesteps that. Fine for `next dev`/a single `next start` process, not for
-// a multi-instance deployment (same caveat as `superadmin/log-store.ts`).
+// Backed by the FastAPI `/documents` endpoints. Files are proxied through
+// `/api/documents/[id]/file` since the backend serves them from an
+// authenticated route, not a public static path.
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "documents");
-const INDEX_PATH = path.join(UPLOAD_DIR, "_index.json");
-const PUBLIC_PATH_PREFIX = "/uploads/documents";
-
-function sanitizeFileName(name: string): string {
-  return name.replace(/[^a-zA-Z0-9._-]/g, "_");
-}
-
-async function readIndex(): Promise<CompanyDocument[]> {
-  try {
-    const raw = await readFile(INDEX_PATH, "utf8");
-    return JSON.parse(raw) as CompanyDocument[];
-  } catch {
-    return [];
-  }
-}
-
-async function writeIndex(docs: CompanyDocument[]): Promise<void> {
-  await mkdir(UPLOAD_DIR, { recursive: true });
-  await writeFile(INDEX_PATH, JSON.stringify(docs, null, 2), "utf8");
+function toDocument(d: ApiDocument): CompanyDocument {
+  return {
+    id: d.id,
+    title: d.title,
+    category: d.category as DocumentCategory,
+    fileName: d.fileName,
+    fileUrl: `/api/documents/${d.id}/file`,
+    fileSizeBytes: d.fileSizeBytes,
+    uploadedAt: d.uploadedAt,
+    uploadedBy: d.uploadedBy,
+    employeeId: d.employeeId ?? undefined,
+  };
 }
 
 // Company-wide documents only (Reports/Policies) - employee-scoped uploads
 // are excluded, see `getEmployeeDocuments`.
 export async function getDocuments(): Promise<CompanyDocument[]> {
-  const docs = await readIndex();
-  return docs.filter((d) => !d.employeeId).sort((a, b) => (a.uploadedAt < b.uploadedAt ? 1 : -1));
+  return (await backend<ApiDocument[]>("/documents")).map(toDocument);
 }
 
+// Admin/HR viewing one specific employee's full document list (ID proof,
+// offer letter, certificates...) from the Employee Profile's Documents tab.
 export async function getEmployeeDocuments(employeeId: string): Promise<CompanyDocument[]> {
-  const docs = await readIndex();
-  return docs
-    .filter((d) => d.employeeId === employeeId)
-    .sort((a, b) => (a.uploadedAt < b.uploadedAt ? 1 : -1));
+  return (await backend<ApiDocument[]>("/documents", { query: { employeeId } })).map(toDocument);
+}
+
+// The signed-in employee's own self-uploaded certificates - the backend
+// takes the employee from the session token and already filters to
+// category=Certificate, unlike `getEmployeeDocuments`.
+export async function getMyDocuments(): Promise<CompanyDocument[]> {
+  return (await backend<ApiDocument[]>("/documents/me")).map(toDocument);
 }
 
 interface AddDocumentInput {
   title: string;
   category: DocumentCategory;
-  fileName: string;
-  fileBytes: Uint8Array;
-  uploadedBy: string;
+  file: File;
   employeeId?: string;
 }
 
 export async function addDocument(input: AddDocumentInput): Promise<CompanyDocument> {
-  const id = `doc-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-  const storedFileName = `${id}-${sanitizeFileName(input.fileName)}`;
-
-  await mkdir(UPLOAD_DIR, { recursive: true });
-  await writeFile(path.join(UPLOAD_DIR, storedFileName), input.fileBytes);
-
-  const doc: CompanyDocument = {
-    id,
-    title: input.title,
-    category: input.category,
-    fileName: input.fileName,
-    fileUrl: `${PUBLIC_PATH_PREFIX}/${storedFileName}`,
-    fileSizeBytes: input.fileBytes.byteLength,
-    uploadedAt: new Date().toISOString(),
-    uploadedBy: input.uploadedBy,
-    employeeId: input.employeeId,
-  };
-
-  const docs = await readIndex();
-  await writeIndex([doc, ...docs]);
-  return doc;
+  const form = new FormData();
+  form.set("title", input.title);
+  form.set("category", input.category);
+  form.set("file", input.file, input.file.name);
+  if (input.employeeId) form.set("employeeId", input.employeeId);
+  return toDocument(await backend<ApiDocument>("/documents", { method: "POST", form }));
 }
 
 export async function deleteDocument(id: string): Promise<boolean> {
-  const docs = await readIndex();
-  const doc = docs.find((d) => d.id === id);
-  if (!doc) return false;
-
-  await writeIndex(docs.filter((d) => d.id !== id));
-  try {
-    await unlink(path.join(process.cwd(), "public", doc.fileUrl));
-  } catch {
-    // File already gone - index removal above is what matters.
-  }
+  await backend(`/documents/${id}`, { method: "DELETE" });
   return true;
+}
+
+export async function addMyDocument(title: string, file: File): Promise<CompanyDocument> {
+  const form = new FormData();
+  form.set("title", title);
+  form.set("file", file, file.name);
+  return toDocument(await backend<ApiDocument>("/documents/me", { method: "POST", form }));
+}
+
+export async function deleteMyDocument(id: string): Promise<boolean> {
+  await backend(`/documents/me/${id}`, { method: "DELETE" });
+  return true;
+}
+
+export async function downloadDocument(id: string): Promise<Response> {
+  return backendRaw(`/documents/${id}/file`);
 }

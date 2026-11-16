@@ -6,13 +6,13 @@ import SectionCard from "@/components/employee/SectionCard";
 import ReportingHierarchy from "@/components/employee/ReportingHierarchy";
 
 export const metadata: Metadata = {
-  title: "Reporting Hierarchy | HR Attendance",
+  title: "Reporting Hierarchy | HumSetu",
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function EmployeeReportingHierarchyPage() {
-  const [me, all] = await Promise.all([requireCurrentEmployee(), getEmployeeOverviews()]);
+  const [me, all] = await Promise.all([requireCurrentEmployee(), getEmployeeOverviews().catch(() => [])]);
   const byId = new Map(all.map((e) => [e.id, e]));
 
   // Walk the manager chain upward, immediate manager first - cycle-safe in

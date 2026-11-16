@@ -107,28 +107,6 @@
   align-items: start;
 }
 
-.factGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
-}
-
-.fact {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.factLabel {
-  font-size: 11px;
-  color: var(--color-text-muted);
-}
-
-.factValue {
-  font-size: 13px;
-  font-weight: 600;
-}
-
 .chipRow {
   display: flex;
   flex-wrap: wrap;
@@ -226,6 +204,13 @@
   background: var(--color-surface);
 }
 
+.editField input:disabled,
+.editField input[readonly] {
+  opacity: 0.8;
+  background: var(--color-bg);
+  cursor: default;
+}
+
 .editActions {
   display: flex;
   gap: 8px;
@@ -280,7 +265,7 @@
 .alertBox {
   width: 100%;
   max-width: 380px;
-  background: var(--color-surface);
+  background: var(--color-surface-opaque);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);

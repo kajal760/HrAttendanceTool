@@ -35,6 +35,10 @@ export default function DepartmentGrid({ departments: initial, employees: initia
   const [modalMode, setModalMode] = useState<"add" | "edit" | null>(null);
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
   const [archiveBusyId, setArchiveBusyId] = useState<string | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<DepartmentSummary | null>(null);
+  const [archiveImpact, setArchiveImpact] = useState(0);
+  const [archiving, setArchiving] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DepartmentSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -103,18 +107,53 @@ export default function DepartmentGrid({ departments: initial, employees: initia
     }
   }
 
-  async function toggleArchived(department: DepartmentSummary) {
+  // Archiving shows the active-employee impact first; restoring is
+  // one-click but the backend rejects it once the 7-day window has passed.
+  async function openArchiveConfirm(department: DepartmentSummary) {
+    setListError(null);
     setArchiveBusyId(department.id);
     try {
-      const res = await fetch(`/api/superadmin/departments/${department.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ archived: !department.archived }),
-      });
+      const res = await fetch(`/api/superadmin/departments/${department.id}/archive-impact`);
       const data = await res.json();
-      if (res.ok) {
-        setDepartments((prev) => prev.map((d) => (d.id === department.id ? mergeSummary(data.department) : d)));
+      if (!res.ok) {
+        setListError(data.error ?? "Could not check this department's impact.");
+        return;
       }
+      setArchiveImpact(data.employeeCount);
+      setArchiveTarget(department);
+    } finally {
+      setArchiveBusyId(null);
+    }
+  }
+
+  async function confirmArchive() {
+    if (!archiveTarget) return;
+    setArchiving(true);
+    try {
+      const res = await fetch(`/api/superadmin/departments/${archiveTarget.id}/archive`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setListError(data.error ?? "Could not archive department.");
+        return;
+      }
+      setDepartments((prev) => prev.map((d) => (d.id === archiveTarget.id ? mergeSummary(data.department) : d)));
+      setArchiveTarget(null);
+    } finally {
+      setArchiving(false);
+    }
+  }
+
+  async function restore(department: DepartmentSummary) {
+    setListError(null);
+    setArchiveBusyId(department.id);
+    try {
+      const res = await fetch(`/api/superadmin/departments/${department.id}/restore`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setListError(data.error ?? "Could not restore department.");
+        return;
+      }
+      setDepartments((prev) => prev.map((d) => (d.id === department.id ? mergeSummary(data.department) : d)));
     } finally {
       setArchiveBusyId(null);
     }
@@ -139,6 +178,8 @@ export default function DepartmentGrid({ departments: initial, employees: initia
           Add department
         </button>
       </div>
+
+      {listError && <div style={{ fontSize: 12, color: "var(--color-danger)", marginBottom: 10 }}>{listError}</div>}
 
       <div className={styles.grid}>
         {filtered.map((department) => (
@@ -195,7 +236,7 @@ export default function DepartmentGrid({ departments: initial, employees: initia
               <button
                 type="button"
                 className={styles.iconButton}
-                onClick={() => toggleArchived(department)}
+                onClick={() => (department.archived ? restore(department) : openArchiveConfirm(department))}
                 disabled={archiveBusyId === department.id}
                 aria-label={department.archived ? "Reactivate department" : "Archive department"}
                 title={department.archived ? "Reactivate" : "Archive"}
@@ -217,6 +258,17 @@ export default function DepartmentGrid({ departments: initial, employees: initia
           busy={deleting}
           onConfirm={confirmDelete}
           onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {archiveTarget && (
+        <ConfirmDialog
+          title="Archive Department"
+          message={`Archive "${archiveTarget.name}"? ${archiveImpact} active employee${archiveImpact === 1 ? "" : "s"} will stay assigned but the department will be hidden from pickers until restored within 7 days.`}
+          confirmLabel="Archive Department"
+          busy={archiving}
+          onConfirm={confirmArchive}
+          onCancel={() => setArchiveTarget(null)}
         />
       )}
 

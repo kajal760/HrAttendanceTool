@@ -1,20 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { DailyRecord, DailyStatus, WorkMode } from "@/lib/hr/attendance-daily";
 import { fmtDuration } from "@/lib/hr/attendance-format";
 import { toneClass, type BadgeTone } from "../lifecycle/badge-tones";
 import styles from "../lifecycle/Lifecycle.module.css";
 import WorkModeSwitch from "./WorkModeSwitch";
+import Pager from "@/components/employee/Pager";
+
+const PAGE_SIZE = 25;
 
 const STATUS_TONE: Record<DailyStatus, BadgeTone> = {
   Present: "green",
   Late: "amber",
+  "Half Day": "amber",
   Absent: "red",
   "On Leave": "gray",
+  Holiday: "blue",
+  "Not checked in": "gray",
 };
 
-const STATUSES: DailyStatus[] = ["Present", "Late", "Absent", "On Leave"];
+const STATUSES: DailyStatus[] = ["Present", "Late", "Half Day", "Absent", "On Leave", "Holiday", "Not checked in"];
 
 interface AttendanceTableProps {
   records: DailyRecord[];
@@ -29,6 +35,7 @@ export default function AttendanceTable({ records, variant }: AttendanceTablePro
   const [employeeId, setEmployeeId] = useState("");
   const [status, setStatus] = useState<DailyStatus | "">("");
   const [workMode, setWorkMode] = useState<WorkMode | "">("");
+  const [page, setPage] = useState(0);
 
   const departments = useMemo(() => Array.from(new Set(records.map((r) => r.department))).sort(), [records]);
 
@@ -43,6 +50,14 @@ export default function AttendanceTable({ records, variant }: AttendanceTablePro
       return true;
     });
   }, [records, query, department, employeeId, status, workMode]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+
+  useEffect(() => {
+    setPage(0);
+  }, [query, department, employeeId, status, workMode]);
+
+  const paged = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
   const modeLabel = (r: DailyRecord) => r.workMode ?? "-";
 
@@ -108,7 +123,7 @@ export default function AttendanceTable({ records, variant }: AttendanceTablePro
             )}
           </thead>
           <tbody>
-            {filtered.map((r) => (
+            {paged.map((r) => (
               <tr key={r.employeeId}>
                 <td style={{ fontWeight: 600 }}>{r.name}</td>
                 {variant === "overview" ? <td className={styles.muted}>{r.employeeCode}</td> : <td>{r.department}</td>}
@@ -122,7 +137,17 @@ export default function AttendanceTable({ records, variant }: AttendanceTablePro
                 {variant === "daily" && <td>{r.checkIn ? `${r.breakMin} min` : "-"}</td>}
                 <td>{modeLabel(r)}</td>
                 {variant === "daily" && (
-                  <td className={r.location === "Verified" ? undefined : styles.muted} style={r.location === "Outside office range" || r.location === "Not verified" ? { color: "var(--color-danger)", fontWeight: 600 } : undefined}>
+                  <td
+                    className={r.location === "Verified" ? undefined : styles.muted}
+                    style={{
+                      ...(r.location === "Outside office range" || r.location === "Not verified" ? { color: "var(--color-danger)", fontWeight: 600 } : undefined),
+                      maxWidth: 220,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                    title={r.location}
+                  >
                     {r.location}
                   </td>
                 )}
@@ -132,6 +157,7 @@ export default function AttendanceTable({ records, variant }: AttendanceTablePro
         </table>
         {filtered.length === 0 && <div className={styles.empty}>No attendance records match these filters.</div>}
       </div>
+      <Pager page={page} totalPages={totalPages} onChange={setPage} />
     </div>
   );
 }

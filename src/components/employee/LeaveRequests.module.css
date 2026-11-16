@@ -34,7 +34,7 @@
   max-width: 480px;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
-  background: var(--color-surface);
+  background: var(--color-surface-opaque);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
@@ -216,6 +216,11 @@
 .badge-rejected {
   color: var(--color-danger);
   background: var(--color-danger-bg);
+}
+
+.badge-cancelled {
+  color: var(--color-text-muted);
+  background: var(--color-border);
 }
 
 .showMoreButton {

@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
-import { addTask, getTask, getTasks } from "@/lib/hr/work-store";
-import type { WorkTaskStatus } from "@/types/work";
+import { errorResponse } from "@/lib/api/backend";
+import { addTask, getTasks } from "@/lib/hr/work-store";
+import type { WorkTaskStatus, WorkPriority } from "@/types/work";
+import { WORK_PRIORITIES } from "@/types/work";
 
 export const dynamic = "force-dynamic";
 
 const STATUSES: WorkTaskStatus[] = ["Pending", "Ongoing", "Completed"];
 
 export async function GET() {
-  return NextResponse.json({ tasks: await getTasks() });
+  try {
+    return NextResponse.json({ tasks: await getTasks() });
+  } catch (err) {
+    return errorResponse(err);
+  }
 }
 
 // Only a manager/HR can create a task - the assignee(s) only ever get to
@@ -15,7 +21,7 @@ export async function GET() {
 // `/api/employee/tasks/[id]/summary`).
 export async function POST(request: Request) {
   const body = await request.json();
-  const { title, description, projectId, assigneeIds, deadline, status, dependsOnTaskId } = body ?? {};
+  const { title, description, projectId, assigneeIds, deadline, status, priority, dependsOnTaskId } = body ?? {};
 
   if (typeof title !== "string" || title.trim().length === 0) {
     return NextResponse.json({ error: "Task title is required." }, { status: 400 });
@@ -32,21 +38,23 @@ export async function POST(request: Request) {
   if (status !== undefined && !STATUSES.includes(status)) {
     return NextResponse.json({ error: "Invalid status." }, { status: 400 });
   }
-  if (dependsOnTaskId !== undefined && dependsOnTaskId !== "" && dependsOnTaskId !== null) {
-    if (typeof dependsOnTaskId !== "string" || !(await getTask(dependsOnTaskId))) {
-      return NextResponse.json({ error: "The task it depends on was not found." }, { status: 400 });
-    }
+  if (priority !== undefined && !(WORK_PRIORITIES as string[]).includes(priority)) {
+    return NextResponse.json({ error: "Invalid priority." }, { status: 400 });
   }
 
-  const task = await addTask({
-    title: title.trim(),
-    description: typeof description === "string" && description.trim() ? description.trim() : undefined,
-    projectId,
-    assigneeIds,
-    deadline,
-    status,
-    dependsOnTaskId: dependsOnTaskId || undefined,
-  });
-
-  return NextResponse.json({ task }, { status: 201 });
+  try {
+    const task = await addTask({
+      title: title.trim(),
+      description: typeof description === "string" && description.trim() ? description.trim() : undefined,
+      projectId,
+      assigneeIds,
+      deadline,
+      status,
+      priority: priority as WorkPriority | undefined,
+      dependsOnTaskId: dependsOnTaskId || undefined,
+    });
+    return NextResponse.json({ task }, { status: 201 });
+  } catch (err) {
+    return errorResponse(err);
+  }
 }

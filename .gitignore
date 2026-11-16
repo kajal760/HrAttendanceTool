@@ -7,3 +7,6 @@ next-env.d.ts
 .DS_Store
 /public/uploads
 /.data
+
+# Local backups made when .data moved to the backend
+/.data-backup-*

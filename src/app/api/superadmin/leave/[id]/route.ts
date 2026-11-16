@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/backend";
 import { decideLeaveRequest } from "@/lib/hr/leave-store";
 import { getSession } from "@/lib/auth/get-session";
 
 export const dynamic = "force-dynamic";
 
-// HR/Admin approve or reject - only works from Pending (see
-// `decideLeaveRequest`), so a request can't be decided twice.
+// HR/Admin approve or reject. The backend only allows it from Pending (409
+// otherwise), refuses HR deciding their own leave, and won't approve sick
+// leave that needs a medical certificate until one is attached.
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session || session.role === "Employee") {
@@ -17,18 +19,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { status, note } = body ?? {};
 
   if (status !== "Approved" && status !== "Rejected") {
-    return NextResponse.json({ error: "status must be \"Approved\" or \"Rejected\"." }, { status: 400 });
+    return NextResponse.json({ error: 'status must be "Approved" or "Rejected".' }, { status: 400 });
   }
   if (note !== undefined && typeof note !== "string") {
     return NextResponse.json({ error: "note must be a string." }, { status: 400 });
   }
 
-  const result = await decideLeaveRequest(id, status, session.name, note?.trim() || undefined);
-  if (result === null) {
-    return NextResponse.json({ error: "Leave request not found." }, { status: 404 });
+  try {
+    return NextResponse.json({ request: await decideLeaveRequest(id, status, note?.trim() || undefined) });
+  } catch (err) {
+    return errorResponse(err);
   }
-  if (result === "not-pending") {
-    return NextResponse.json({ error: "This request has already been decided." }, { status: 409 });
-  }
-  return NextResponse.json({ request: result });
 }

@@ -3,7 +3,7 @@ import { getEmployeeOverviews } from "@/lib/hr/employee-store";
 import LifecycleModule from "@/components/hr/lifecycle/LifecycleModule";
 
 export const metadata: Metadata = {
-  title: "Lifecycle - Role Change | HR Attendance",
+  title: "Lifecycle - Role Change | HumSetu",
 };
 
 export const dynamic = "force-dynamic";

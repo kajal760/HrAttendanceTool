@@ -10,7 +10,7 @@ import DepartmentDetailView from "@/components/hr/DepartmentDetailView";
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const department = await getDepartment(id);
-  return { title: department ? `${department.name} | HR Attendance` : "Department | HR Attendance" };
+  return { title: department ? `${department.name} | HumSetu` : "Department | HumSetu" };
 }
 
 export const dynamic = "force-dynamic";

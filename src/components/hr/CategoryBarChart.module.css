@@ -1,3 +1,8 @@
+.chartBox {
+  position: relative;
+  height: 220px;
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;

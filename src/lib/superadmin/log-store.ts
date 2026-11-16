@@ -45,11 +45,11 @@ async function writeExportLogs(entries: SystemLogEntry[]): Promise<void> {
 const SUPER_ADMIN: LogActor = { id: "super-admin", name: "Super Admin", initials: "SA" };
 
 const ACTORS: LogActor[] = [
-  { id: "emp-1024", name: "Aditi Sharma", initials: "AS" },
-  { id: "emp-1032", name: "Rohit Verma", initials: "RV" },
-  { id: "emp-1045", name: "Neha Kapoor", initials: "NK" },
-  { id: "emp-1051", name: "Sameer Iyer", initials: "SI" },
-  { id: "emp-1067", name: "Priya Nair", initials: "PN" },
+  { id: "00000000-0000-4000-8000-000000001024", name: "Aditi Sharma", initials: "AS" },
+  { id: "00000000-0000-4000-8000-000000001032", name: "Rohit Verma", initials: "RV" },
+  { id: "00000000-0000-4000-8000-000000001045", name: "Neha Kapoor", initials: "NK" },
+  { id: "00000000-0000-4000-8000-000000001051", name: "Sameer Iyer", initials: "SI" },
+  { id: "00000000-0000-4000-8000-000000001067", name: "Priya Nair", initials: "PN" },
 ];
 
 const EVENT_INFO: Partial<Record<LogEventType, { module: LogModule; severity: LogSeverity }>> = {
@@ -103,11 +103,11 @@ function makeEntry(
 }
 
 function buildSeedAuthLogs(): SystemLogEntry[] {
-  const aditi = actorFor("emp-1024");
-  const rohit = actorFor("emp-1032");
-  const neha = actorFor("emp-1045");
-  const sameer = actorFor("emp-1051");
-  const priya = actorFor("emp-1067");
+  const aditi = actorFor("00000000-0000-4000-8000-000000001024");
+  const rohit = actorFor("00000000-0000-4000-8000-000000001032");
+  const neha = actorFor("00000000-0000-4000-8000-000000001045");
+  const sameer = actorFor("00000000-0000-4000-8000-000000001051");
+  const priya = actorFor("00000000-0000-4000-8000-000000001067");
 
   return [
     makeEntry("log-seed-1", minutesAgo(4), "Login successful", aditi, DEVICES[0]),
@@ -134,11 +134,11 @@ function buildSeedAuthLogs(): SystemLogEntry[] {
 // this app yet, so these are a small fixed seed rather than a live feed -
 // enough for the module tab/filter to have something real-looking to show.
 function buildStaticDemoLogs(): SystemLogEntry[] {
-  const aditi = actorFor("emp-1024");
-  const rohit = actorFor("emp-1032");
-  const neha = actorFor("emp-1045");
-  const sameer = actorFor("emp-1051");
-  const priya = actorFor("emp-1067");
+  const aditi = actorFor("00000000-0000-4000-8000-000000001024");
+  const rohit = actorFor("00000000-0000-4000-8000-000000001032");
+  const neha = actorFor("00000000-0000-4000-8000-000000001045");
+  const sameer = actorFor("00000000-0000-4000-8000-000000001051");
+  const priya = actorFor("00000000-0000-4000-8000-000000001067");
 
   return [
     { id: "log-att-1", timestamp: minutesAgo(35), module: "Attendance", event: "Clock in", actor: aditi, department: "Engineering", detail: "Office · 09:04 AM", severity: "info" },

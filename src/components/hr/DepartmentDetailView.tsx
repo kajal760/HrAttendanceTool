@@ -10,6 +10,7 @@ import { withBase } from "@/lib/portal";
 import { usePortalBase } from "./usePortalBase";
 import DepartmentFormModal from "./DepartmentFormModal";
 import SystemLogViewer from "./SystemLogViewer";
+import ConfirmDialog from "./lifecycle/ConfirmDialog";
 import formStyles from "./FormModal.module.css";
 import styles from "./DepartmentDetailView.module.css";
 
@@ -27,9 +28,17 @@ function average(values: number[]): number {
   return Math.round(values.reduce((sum, v) => sum + v, 0) / values.length);
 }
 
-function formatDate(iso?: string): string {
+function formatDate(iso?: string | null): string {
   if (!iso) return "-";
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+const RESTORE_WINDOW_DAYS = 7;
+
+function restoreDeadline(archivedAt: string): string {
+  const deadline = new Date(archivedAt);
+  deadline.setDate(deadline.getDate() + RESTORE_WINDOW_DAYS);
+  return formatDate(deadline.toISOString());
 }
 
 interface DepartmentDetailViewProps {
@@ -62,6 +71,9 @@ export default function DepartmentDetailView({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [addBusy, setAddBusy] = useState(false);
   const [archiveBusy, setArchiveBusy] = useState(false);
+  const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false);
+  const [archiveImpact, setArchiveImpact] = useState(0);
+  const [archiving, setArchiving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const headName = members.find((m) => m.id === department.headId)?.name
@@ -84,18 +96,49 @@ export default function DepartmentDetailView({
     [candidates, sourceDeptFilter],
   );
 
-  async function toggleArchived() {
+  // Archiving shows the active-employee impact first; restoring is
+  // one-click but the backend rejects it once the 7-day window has passed.
+  async function openArchiveConfirm() {
     setArchiveBusy(true);
     setError(null);
     try {
-      const res = await fetch(`/api/superadmin/departments/${department.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ archived: !department.archived }),
-      });
+      const res = await fetch(`/api/superadmin/departments/${department.id}/archive-impact`);
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not update department.");
+        setError(data.error ?? "Could not check this department's impact.");
+        return;
+      }
+      setArchiveImpact(data.employeeCount);
+      setArchiveConfirmOpen(true);
+    } finally {
+      setArchiveBusy(false);
+    }
+  }
+
+  async function confirmArchive() {
+    setArchiving(true);
+    try {
+      const res = await fetch(`/api/superadmin/departments/${department.id}/archive`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Could not archive department.");
+        return;
+      }
+      setDepartment(data.department);
+      setArchiveConfirmOpen(false);
+    } finally {
+      setArchiving(false);
+    }
+  }
+
+  async function restore() {
+    setArchiveBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/superadmin/departments/${department.id}/restore`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Could not restore department.");
         return;
       }
       setDepartment(data.department);
@@ -176,6 +219,11 @@ export default function DepartmentDetailView({
           </div>
           {department.description && <p className={styles.description}>{department.description}</p>}
           <span className={styles.meta}>Head: {headName ?? "Unassigned"}</span>
+          {department.archived && department.archivedAt && (
+            <span className={styles.meta}>
+              Archived on {formatDate(department.archivedAt)} - restorable until {restoreDeadline(department.archivedAt)}
+            </span>
+          )}
         </div>
         <div className={styles.headerActions}>
           <button type="button" className={styles.editButton} onClick={() => setEditOpen(true)}>
@@ -184,7 +232,7 @@ export default function DepartmentDetailView({
           <button
             type="button"
             className={department.archived ? styles.reactivateButton : styles.archiveButton}
-            onClick={toggleArchived}
+            onClick={department.archived ? restore : openArchiveConfirm}
             disabled={archiveBusy}
           >
             {archiveBusy ? "Saving..." : department.archived ? "Reactivate" : "Archive"}
@@ -309,6 +357,17 @@ export default function DepartmentDetailView({
 
       {tab === "activity" && (
         <SystemLogViewer initialLogs={logs} />
+      )}
+
+      {archiveConfirmOpen && (
+        <ConfirmDialog
+          title="Archive Department"
+          message={`Archive "${department.name}"? ${archiveImpact} active employee${archiveImpact === 1 ? "" : "s"} will stay assigned but the department will be hidden from pickers until restored within 7 days.`}
+          confirmLabel="Archive Department"
+          busy={archiving}
+          onConfirm={confirmArchive}
+          onCancel={() => setArchiveConfirmOpen(false)}
+        />
       )}
 
       {editOpen && (

@@ -1,9 +1,13 @@
-import type { AttendanceDay, AttendanceDayStatus, AttendanceHistory, LeaveCategory, LeaveRequest } from "@/types/attendance";
+import { backend } from "@/lib/api/backend";
+import type { ApiAttendanceHistory } from "@/lib/api/types";
+import { getSession } from "@/lib/auth/get-session";
+import type { AttendanceDay, AttendanceHistory, AttendanceHistoryDayStatus, LeaveHistoryEntry } from "@/types/attendance";
+import type { LeaveRequest } from "@/types/employee";
+import { getLeaveRequestsForEmployee } from "./leave-store";
 
-// Attendance and leave history for an employee profile. There's no leave or
-// attendance store yet, so this is deterministic demo data: the same employee
-// always gets the same history for a given day. Replace with real records
-// once the leave and attendance workflows exist.
+// Attendance and leave history for an employee profile - real clock-in
+// records, approved leave and holidays from the backend's per-day history,
+// plus the employee's leave requests.
 
 export function hash(input: string): number {
   let h = 2166136261;
@@ -29,67 +33,50 @@ export function isWeekend(d: Date): boolean {
   return d.getDay() === 0 || d.getDay() === 6;
 }
 
-function countWorkingDays(from: Date, to: Date): number {
-  let n = 0;
-  for (let d = new Date(from); d <= to; d = addDays(d, 1)) if (!isWeekend(d)) n++;
-  return n;
+// The signed-in employee's own history goes through `/me`; Admin/HR read anyone's.
+export async function fetchAttendanceHistory(employeeId: string, from: string, to: string): Promise<ApiAttendanceHistory> {
+  const session = await getSession();
+  const path =
+    session?.employeeId === employeeId ? "/attendance/me/history" : `/attendance/employees/${employeeId}/history`;
+  return backend<ApiAttendanceHistory>(path, { query: { from, to } });
 }
 
-const CATEGORIES: LeaveCategory[] = ["Casual", "Sick", "Compensatory", "Mandatory", "Birthday", "Work Anniversary"];
-
-function leavesFor(employeeId: string, today: Date): LeaveRequest[] {
-  const h = hash(employeeId);
-  const count = 2 + (h % 3); // 2-4 requests
-  const leaves: LeaveRequest[] = [];
-  for (let i = 0; i < count; i++) {
-    const seed = hash(`${employeeId}-leave-${i}`);
-    const offset = (seed % 120) - 80; // roughly 80 days back to 40 ahead
-    const from = addDays(today, offset);
-    const length = 1 + (seed % 3);
-    const to = addDays(from, length - 1);
-    const status = (["Pending", "Approved", "Approved", "Rejected"] as const)[seed % 4];
-    leaves.push({
-      id: `${employeeId}-leave-${i}`,
-      category: CATEGORIES[seed % CATEGORIES.length],
-      from: isoDay(from),
-      to: isoDay(to),
-      days: countWorkingDays(from, to),
-      status,
-      appliedOn: isoDay(addDays(from, -(3 + (seed % 10)))),
-    });
-  }
-  return leaves.sort((a, b) => (a.from < b.from ? 1 : -1));
+function toViewLeave(r: LeaveRequest): LeaveHistoryEntry {
+  return {
+    id: r.id,
+    category: r.category,
+    from: r.startDate,
+    to: r.endDate,
+    days: r.days,
+    status: r.status,
+    appliedOn: r.submittedAt.slice(0, 10),
+  };
 }
 
-export function getAttendanceHistory(employeeId: string, today: Date = new Date()): AttendanceHistory {
-  const leaves = leavesFor(employeeId, today);
-  const approvedDates = new Set<string>();
-  for (const l of leaves) {
-    if (l.status !== "Approved") continue;
-    for (let d = new Date(l.from); isoDay(d) <= l.to; d = addDays(d, 1)) approvedDates.add(isoDay(d));
-  }
+// The last 30 working days (most recent first) and every leave request.
+export async function getAttendanceHistory(employeeId: string, today: Date = new Date()): Promise<AttendanceHistory> {
+  const [history, requests] = await Promise.all([
+    fetchAttendanceHistory(employeeId, isoDay(addDays(today, -60)), isoDay(today)),
+    getLeaveRequestsForEmployee(employeeId),
+  ]);
+  const leaves = requests.map(toViewLeave).sort((a, b) => (a.from < b.from ? 1 : -1));
 
   const days: AttendanceDay[] = [];
-  for (let back = 0; days.length < 30 && back < 60; back++) {
-    const d = addDays(today, -back);
-    if (isWeekend(d)) continue;
-    const key = isoDay(d);
-    let status: AttendanceDayStatus;
-    if (approvedDates.has(key)) status = "On Leave";
-    else {
-      const r = hash(`${employeeId}-${key}`) % 100;
-      status = r < 80 ? "Present" : r < 88 ? "WFH" : r < 95 ? "Late" : "Absent";
-    }
-    days.push({ date: key, status });
+  for (const d of history.days) {
+    if (days.length >= 30) break;
+    if (d.status === null || d.status === "Weekend") continue;
+    let status: AttendanceHistoryDayStatus = d.status;
+    if (d.status === "Present" && d.record?.workMode === "Work From Home") status = "WFH";
+    days.push({ date: d.date, status });
   }
 
-  const count = (s: AttendanceDayStatus) => days.filter((d) => d.status === s).length;
+  const count = (s: AttendanceHistoryDayStatus) => days.filter((d) => d.status === s).length;
   const pending = leaves.filter((l) => l.status === "Pending");
   return {
     leaves,
     days,
     summary: {
-      present: count("Present"),
+      present: count("Present") + count("Half Day"),
       late: count("Late"),
       wfh: count("WFH"),
       absent: count("Absent"),
@@ -100,15 +87,4 @@ export function getAttendanceHistory(employeeId: string, today: Date = new Date(
       leaveRejected: leaves.filter((l) => l.status === "Rejected").length,
     },
   };
-}
-
-// Every date an employee is on approved leave, as of `today`. Shared with the
-// daily attendance view so a leave day shows as On Leave everywhere.
-export function approvedLeaveDays(employeeId: string, today: Date = new Date()): Set<string> {
-  const out = new Set<string>();
-  for (const l of leavesFor(employeeId, today)) {
-    if (l.status !== "Approved") continue;
-    for (let d = new Date(l.from); isoDay(d) <= l.to; d = addDays(d, 1)) out.add(isoDay(d));
-  }
-  return out;
 }

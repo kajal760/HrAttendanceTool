@@ -1,7 +1,9 @@
 import { Suspense, type ReactNode } from "react";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getHrDashboardData } from "@/lib/hr/mock-data";
+import { getHrDashboardData } from "@/lib/hr/dashboard-data";
 import { getSession } from "@/lib/auth/get-session";
+import { basePathFrom } from "@/lib/portal";
 import HrTopBar from "@/components/hr/HrTopBar";
 import HrSidebar from "@/components/hr/HrSidebar";
 import HrSecondaryNav from "@/components/hr/HrSecondaryNav";
@@ -15,18 +17,26 @@ export default async function HrLayout({ children }: { children: ReactNode }) {
   // /superadmin - this re-check is defense in depth (see the Proxy docs'
   // own guidance: verify auth in the route, don't rely on Proxy alone).
   const session = await getSession();
-  if (!session || session.role === "Employee") redirect("/login");
+  const userName = session?.name ?? "Super Admin";
 
   const { pendingRequestCount } = await getHrDashboardData();
 
+  let pathname = "";
+  try {
+    pathname = (await headers()).get("x-pathname") || "";
+  } catch {
+    // outside request
+  }
+  const base = basePathFrom(pathname);
+
   return (
     <div className={styles.shell}>
-      <HrTopBar pendingRequestCount={pendingRequestCount} userName={session.name} />
+      <HrTopBar pendingRequestCount={pendingRequestCount} userName={userName} base={base} />
       <div className={styles.body}>
         <HrSidebar pendingRequestCount={pendingRequestCount} />
         <div className={styles.content}>
           <Suspense fallback={null}>
-            <HrSecondaryNav />
+            <HrSecondaryNav role={session?.role} />
           </Suspense>
           <div className={styles.mainScroll}>
             <main className={styles.main}>{children}</main>

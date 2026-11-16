@@ -6,7 +6,7 @@ import { resolveTasksWithProject } from "@/lib/employee/task-dependencies";
 import EmployeeTaskBoard from "@/components/employee/EmployeeTaskBoard";
 
 export const metadata: Metadata = {
-  title: "My Tasks | HR Attendance",
+  title: "My Tasks | HumSetu",
 };
 
 export const dynamic = "force-dynamic";
@@ -15,9 +15,9 @@ export default async function EmployeeTasksPage() {
   const employee = await requireCurrentEmployee();
   const [myTasks, allTasks, projects, employees] = await Promise.all([
     getTasksForEmployee(employee.id),
-    getTasks(),
-    getProjects(),
-    getEmployeeOverviews(),
+    getTasks().catch(() => []),
+    getProjects().catch(() => []),
+    getEmployeeOverviews().catch(() => []),
   ]);
 
   const tasks = resolveTasksWithProject(myTasks, allTasks, projects);

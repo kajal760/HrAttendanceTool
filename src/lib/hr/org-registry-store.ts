@@ -1,65 +1,66 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { backend, BackendError } from "@/lib/api/backend";
+import type { ApiRegistryItem } from "@/lib/api/types";
 import type { OrgRegistryItem, OrgRegistryResource } from "@/types/hr";
 
-// Same disk-backed JSON-index pattern as `employee-store.ts`/
-// `document-store.ts` - one generic implementation parameterized by
-// resource name instead of three near-identical stores.
+// Departments / designations / locations registry - backed by the FastAPI
+// `/org/{resource}` endpoints. ("departments" is the same table the
+// Departments module's `department-store.ts` manages.)
 
-const DATA_DIR = path.join(process.cwd(), ".data");
-
-const SEEDS: Record<OrgRegistryResource, string[]> = {
-  departments: ["Engineering", "Product", "Design", "Human Resources", "Sales", "Finance", "Marketing"],
-  designations: [
-    "Software Engineer",
-    "Senior Software Engineer",
-    "QA Engineer",
-    "Product Manager",
-    "UI/UX Designer",
-    "HR Manager",
-    "Sales Executive",
-    "Financial Analyst",
-    "Marketing Lead",
-  ],
-  locations: ["Bengaluru", "Mumbai", "Delhi NCR", "Remote"],
-};
-
-function indexPath(resource: OrgRegistryResource): string {
-  return path.join(DATA_DIR, `org-${resource}.json`);
+export async function getOrgRegistry(resource: OrgRegistryResource): Promise<OrgRegistryItem[]> {
+  const items = await backend<ApiRegistryItem[]>(`/org/${resource}`);
+  return items.map(({ id, name }) => ({ id, name }));
 }
 
-async function readList(resource: OrgRegistryResource): Promise<OrgRegistryItem[]> {
+export async function addOrgRegistryItem(resource: OrgRegistryResource, name: string): Promise<OrgRegistryItem> {
+  const item = await backend<ApiRegistryItem>(`/org/${resource}`, { method: "POST", body: { name } });
+  return { id: item.id, name: item.name };
+}
+
+// Throws a 409 BackendError on a duplicate name (case-insensitive, like the
+// backend's uniqueness check).
+export async function patchOrgRegistryItem(
+  resource: OrgRegistryResource,
+  id: string,
+  patch: { name: string },
+): Promise<OrgRegistryItem> {
+  const item = await backend<ApiRegistryItem>(`/org/${resource}/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: { name: patch.name },
+  });
+  return { id: item.id, name: item.name };
+}
+
+// Throws a 409 BackendError when employees still reference the item.
+export async function deleteOrgRegistryItem(resource: OrgRegistryResource, id: string): Promise<boolean> {
   try {
-    const raw = await readFile(indexPath(resource), "utf8");
-    return JSON.parse(raw) as OrgRegistryItem[];
-  } catch {
-    return SEEDS[resource].map((name, i) => ({ id: `${resource}-seed-${i}`, name }));
+    await backend(`/org/${resource}/${encodeURIComponent(id)}`, { method: "DELETE" });
+    return true;
+  } catch (err) {
+    if (err instanceof BackendError && (err.status === 404 || err.status === 422)) return false;
+    throw err;
   }
 }
 
-async function writeList(resource: OrgRegistryResource, items: OrgRegistryItem[]): Promise<void> {
-  await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(indexPath(resource), JSON.stringify(items, null, 2), "utf8");
-}
+// Name -> id, including archived entries (an employee may still be filed
+// under an archived department). Case-insensitive, like the backend's
+// uniqueness check. The org structure forms itself from employee data: if no
+// department/designation/location by this name exists yet, it's created here
+// rather than requiring someone to have pre-declared it on the registry.
+export async function resolveRegistryId(resource: OrgRegistryResource, name: string): Promise<string> {
+  const trimmed = name.trim();
+  const items = await backend<ApiRegistryItem[]>(`/org/${resource}`, { query: { include_archived: true } });
+  const match = items.find((i) => i.name.toLowerCase() === trimmed.toLowerCase());
+  if (match) return match.id;
 
-export async function getOrgRegistry(resource: OrgRegistryResource): Promise<OrgRegistryItem[]> {
-  return readList(resource);
-}
-
-export async function addOrgRegistryItem(
-  resource: OrgRegistryResource,
-  name: string,
-): Promise<OrgRegistryItem> {
-  const items = await readList(resource);
-  const item: OrgRegistryItem = { id: `${resource}-${Date.now()}`, name };
-  await writeList(resource, [...items, item]);
-  return item;
-}
-
-export async function deleteOrgRegistryItem(resource: OrgRegistryResource, id: string): Promise<boolean> {
-  const items = await readList(resource);
-  const filtered = items.filter((i) => i.id !== id);
-  if (filtered.length === items.length) return false;
-  await writeList(resource, filtered);
-  return true;
+  try {
+    return (await addOrgRegistryItem(resource, trimmed)).id;
+  } catch (err) {
+    // Lost a race with another request creating the same name - use theirs.
+    if (err instanceof BackendError && err.status === 409) {
+      const retry = await backend<ApiRegistryItem[]>(`/org/${resource}`, { query: { include_archived: true } });
+      const retryMatch = retry.find((i) => i.name.toLowerCase() === trimmed.toLowerCase());
+      if (retryMatch) return retryMatch.id;
+    }
+    throw err;
+  }
 }

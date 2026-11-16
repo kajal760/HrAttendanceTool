@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { EmployeeOverview } from "@/types/hr";
 import { toneClass } from "./badge-tones";
+import StatCard from "../StatCard";
 import styles from "./Lifecycle.module.css";
 
 function formatDate(iso?: string): string {
@@ -145,14 +146,8 @@ export default function FullAndFinalTab({ employees, onEmployeeUpdated, onViewLi
   return (
     <div>
       <div className={styles.statGrid}>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>{pending.length}</span>
-          <span className={styles.statLabel}>Pending</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>{settledList.length}</span>
-          <span className={styles.statLabel}>Settled</span>
-        </div>
+        <StatCard label="Pending" value={pending.length} />
+        <StatCard label="Settled" value={settledList.length} />
       </div>
 
       {separated.length === 0 ? (

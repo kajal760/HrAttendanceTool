@@ -21,6 +21,10 @@ interface AssetTableProps {
 }
 
 export default function AssetTable({ assets }: AssetTableProps) {
+  if (assets.length === 0) {
+    return <p className={styles.muted}>No assets allocated to you yet.</p>;
+  }
+
   return (
     <table className={styles.table}>
       <thead>
@@ -40,7 +44,7 @@ export default function AssetTable({ assets }: AssetTableProps) {
             <td className={styles.muted}>{asset.type}</td>
             <td className={styles.muted}>{asset.assetTag}</td>
             <td className={styles.muted}>{formatDate(asset.allocatedOn)}</td>
-            <td className={styles.muted}>{asset.condition}</td>
+            <td className={styles.muted}>{asset.condition ?? "–"}</td>
             <td>
               <span className={`${styles.badge} ${styles[BADGE_CLASS[asset.status]]}`}>
                 {asset.status}

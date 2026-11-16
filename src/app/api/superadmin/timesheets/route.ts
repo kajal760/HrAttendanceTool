@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/backend";
 import { getTimesheetEntries } from "@/lib/hr/timesheet-store";
 import { getSession } from "@/lib/auth/get-session";
 
@@ -13,6 +14,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const from = searchParams.get("from") ?? undefined;
   const to = searchParams.get("to") ?? undefined;
-  const entries = await getTimesheetEntries({ from, to });
-  return NextResponse.json({ entries });
+  try {
+    const entries = await getTimesheetEntries({ from, to });
+    return NextResponse.json({ entries });
+  } catch (err) {
+    return errorResponse(err);
+  }
 }

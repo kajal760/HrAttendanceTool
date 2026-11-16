@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Pencil } from "lucide-react";
 import type { EmployeeOverview } from "@/types/hr";
-import type { Project, ProjectRollupStatus, WorkTask } from "@/types/work";
+import type { Project, ProjectRollupStatus, WorkPriority, WorkTask } from "@/types/work";
 import { displayStatus, projectStatus } from "@/lib/work/status";
+import { toneClass, type BadgeTone } from "./lifecycle/badge-tones";
 import { useDepartmentNames } from "./useDepartmentNames";
 import ProjectFormModal from "./ProjectFormModal";
+import Pager from "@/components/employee/Pager";
 import styles from "./ProjectBoard.module.css";
 
 interface ProjectBoardProps {
@@ -16,9 +18,27 @@ interface ProjectBoardProps {
 }
 
 const PROJECT_STATUS_OPTIONS: ProjectRollupStatus[] = ["Active", "Upcoming", "Delayed", "Completed"];
+const PAGE_SIZE = 6;
+
+const PROJECT_STATUS_TONE: Record<ProjectRollupStatus, BadgeTone> = {
+  Active: "blue",
+  Completed: "green",
+  Upcoming: "gray",
+  Delayed: "red",
+};
+
+const PRIORITY_TONE: Record<WorkPriority, BadgeTone> = {
+  High: "red",
+  Medium: "amber",
+  Low: "blue",
+};
 
 function formatDeadline(date: string): string {
   return new Date(date).toLocaleDateString("en-GB", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function initialsOf(name: string): string {
+  return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 }
 
 export default function ProjectBoard({ projects: initialProjects, tasks, employees }: ProjectBoardProps) {
@@ -28,6 +48,7 @@ export default function ProjectBoard({ projects: initialProjects, tasks, employe
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProjectRollupStatus | "All">("All");
+  const [page, setPage] = useState(0);
   const { names: departmentNames } = useDepartmentNames();
 
   const employeesById = useMemo(() => new Map(employees.map((e) => [e.id, e])), [employees]);
@@ -55,6 +76,13 @@ export default function ProjectBoard({ projects: initialProjects, tasks, employe
       return true;
     });
   }, [projects, tasks, search, departmentFilter, statusFilter]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [search, departmentFilter, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProjects.length / PAGE_SIZE));
+  const pageProjects = filteredProjects.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
   function openAdd() {
     setEditingProject(null);
@@ -132,10 +160,14 @@ export default function ProjectBoard({ projects: initialProjects, tasks, employe
       </div>
 
       <div className={styles.grid}>
-        {filteredProjects.map((project) => {
+        {pageProjects.map((project) => {
           const projectTasks = tasksByProject.get(project.id) ?? [];
           const completed = projectTasks.filter((t) => t.status === "Completed").length;
           const overdue = projectTasks.filter((t) => displayStatus(t) === "Overdue").length;
+          const status = projectStatus(project, tasks);
+          const progressPct = projectTasks.length > 0 ? Math.round((completed / projectTasks.length) * 100) : 0;
+          const visibleMembers = project.memberIds.slice(0, 3);
+          const overflowCount = project.memberIds.length - visibleMembers.length;
 
           return (
             <div className={styles.card} key={project.id}>
@@ -146,6 +178,12 @@ export default function ProjectBoard({ projects: initialProjects, tasks, employe
                   Edit
                 </button>
               </div>
+
+              <div className={styles.badgeRow}>
+                <span className={toneClass(styles, PROJECT_STATUS_TONE[status])}>{status}</span>
+                <span className={toneClass(styles, PRIORITY_TONE[project.priority])}>{project.priority}</span>
+              </div>
+
               {project.description && <p className={styles.description}>{project.description}</p>}
 
               <div className={styles.metaRow}>
@@ -158,12 +196,14 @@ export default function ProjectBoard({ projects: initialProjects, tasks, employe
                     <span className={styles.overdue}>{overdue} overdue</span>
                   </>
                 )}
-                {project.deadline && (
-                  <>
-                    <span>&middot;</span>
-                    <span>Due {formatDeadline(project.deadline)}</span>
-                  </>
-                )}
+              </div>
+
+              <div className={styles.progressRow}>
+                <span>Progress</span>
+                <span>{progressPct}%</span>
+              </div>
+              <div className={styles.progressTrack}>
+                <div className={styles.progressFill} style={{ width: `${progressPct}%` }} />
               </div>
 
               <div className={styles.assignment}>
@@ -171,18 +211,22 @@ export default function ProjectBoard({ projects: initialProjects, tasks, employe
                   <span className={styles.assignLabel}>Department</span>
                   <span className={styles.assignValue}>{project.departmentName ?? "Not set"}</span>
                 </div>
-                <div className={styles.assignRow}>
-                  <span className={styles.assignLabel}>Assigned to</span>
-                  {project.memberIds.length === 0 ? (
-                    <span className={styles.muted}>No one assigned yet</span>
-                  ) : (
-                    <span className={styles.chips}>
-                      {namesOf(project.memberIds).map((n) => (
-                        <span key={n} className={styles.chip}>{n}</span>
-                      ))}
-                    </span>
-                  )}
-                </div>
+              </div>
+
+              <div className={styles.cardFooter}>
+                {project.memberIds.length === 0 ? (
+                  <span className={styles.muted}>No one assigned yet</span>
+                ) : (
+                  <div className={styles.avatarStack}>
+                    {namesOf(visibleMembers).map((n, i) => (
+                      <span className={styles.avatar} key={i} title={n}>
+                        {initialsOf(n)}
+                      </span>
+                    ))}
+                    {overflowCount > 0 && <span className={styles.avatar}>+{overflowCount}</span>}
+                  </div>
+                )}
+                {project.deadline && <span className={styles.dueDate}>Due: {formatDeadline(project.deadline)}</span>}
               </div>
             </div>
           );
@@ -193,6 +237,7 @@ export default function ProjectBoard({ projects: initialProjects, tasks, employe
           </p>
         )}
       </div>
+      <Pager page={page} totalPages={totalPages} onChange={setPage} />
 
       {modalMode && (
         <ProjectFormModal

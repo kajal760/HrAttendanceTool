@@ -12,19 +12,18 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   return NextResponse.json({ department });
 }
 
-// Edits (rename/re-describe), head reassignment, and archive/reactivate all
-// go through this one PATCH - same "one write primitive" convention as the
-// employee lifecycle route.
+// Edits (rename/re-describe) and head reassignment go through this one
+// PATCH - archive/reactivate have their own routes (see `./archive`,
+// `./restore`, `./archive-impact`).
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const { name, description, headId, archived } = body ?? {};
+  const { name, description, headId } = body ?? {};
 
   const patch: Record<string, unknown> = {};
   if (name !== undefined) patch.name = String(name);
   if (description !== undefined) patch.description = String(description);
   if (headId !== undefined) patch.headId = headId === null ? null : String(headId);
-  if (archived !== undefined) patch.archived = Boolean(archived);
 
   const result = await patchDepartment(id, patch);
   if (result === null) {

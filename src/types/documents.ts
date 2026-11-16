@@ -4,18 +4,20 @@
 
 export type DocumentCategory =
   | "Leave Policy"
-  | "Company Policy"
+  | "HR Policy"
   | "Onboarding"
   | "Benefits"
   | "SOP"
+  | "Certificate"
   | "Other";
 
 export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
   "Leave Policy",
-  "Company Policy",
+  "HR Policy",
   "Onboarding",
   "Benefits",
   "SOP",
+  "Certificate",
   "Other",
 ];
 

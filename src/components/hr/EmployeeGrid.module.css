@@ -7,28 +7,6 @@
   margin-bottom: 14px;
 }
 
-.sortControls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.sortLabel {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  font-weight: 500;
-}
-
-.sortControls select {
-  font-size: 13px;
-  padding: 7px 10px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-
 .toolbarButtons {
   display: flex;
   align-items: center;

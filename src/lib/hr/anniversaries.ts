@@ -12,7 +12,7 @@ export interface UpcomingAnniversary {
   isToday: boolean;
 }
 
-// Mirrors `nextOccurrence` in `src/lib/employee/mock-data.ts` (used for
+// Mirrors `nextOccurrence` in `src/lib/employee/dashboard-data.ts` (used for
 // birthdays), but works from a full `joinedOn` date rather than a bare
 // "MM-DD" string, so it can also report how many years this anniversary
 // marks.

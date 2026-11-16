@@ -1,14 +1,32 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getLeaveRequests } from "@/lib/hr/leave-store";
+import { getSession } from "@/lib/auth/get-session";
+import { withBase } from "@/lib/portal";
 import LeaveCalendar from "@/components/hr/leave/LeaveCalendar";
+import LeaveWeekView from "@/components/hr/leave/LeaveWeekView";
+import LeaveListView from "@/components/hr/leave/LeaveListView";
+import UpcomingLeavesPanel from "@/components/hr/leave/UpcomingLeavesPanel";
+import styles from "@/components/hr/leave/Leave.module.css";
 
 export const metadata: Metadata = {
-  title: "Leave Calendar | HR Attendance",
+  title: "Leave Calendar | HumSetu",
 };
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = { year?: string; month?: string };
+type ViewMode = "month" | "week" | "list";
+const VIEWS: { key: ViewMode; label: string }[] = [
+  { key: "month", label: "Month" },
+  { key: "week", label: "Week" },
+  { key: "list", label: "List" },
+];
+
+type SearchParams = { year?: string; month?: string; view?: string };
+
+function todayIso(): string {
+  return new Date().toLocaleDateString("en-CA");
+}
 
 export default async function SuperAdminLeaveCalendarPage({
   searchParams,
@@ -19,7 +37,15 @@ export default async function SuperAdminLeaveCalendarPage({
   const now = new Date();
   const year = params.year ? Number(params.year) : now.getFullYear();
   const month = params.month ? Number(params.month) : now.getMonth();
-  const requests = await getLeaveRequests();
+  const view: ViewMode = params.view === "week" || params.view === "list" ? params.view : "month";
+  const [requests, session] = await Promise.all([getLeaveRequests(), getSession()]);
+  const base = session?.role === "HR" ? "/hr" : "/superadmin";
+
+  const today = todayIso();
+  const upcoming = [...requests]
+    .filter((r) => (r.status === "Approved" || r.status === "Pending") && r.startDate >= today)
+    .sort((a, b) => (a.startDate < b.startDate ? -1 : 1))
+    .slice(0, 6);
 
   return (
     <>
@@ -29,7 +55,27 @@ export default async function SuperAdminLeaveCalendarPage({
           Who's on approved or pending leave, by day.
         </p>
       </div>
-      <LeaveCalendar requests={requests} year={year} month={month} />
+
+      <div className={styles.filterRow}>
+        {VIEWS.map((v) => (
+          <Link
+            key={v.key}
+            href={withBase(base, `/leave/calendar?view=${v.key}&year=${year}&month=${month}`)}
+            className={`${styles.filterButton} ${view === v.key ? styles.filterButtonActive : ""}`}
+          >
+            {v.label}
+          </Link>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 260px", gap: 16, alignItems: "start" }}>
+        <div>
+          {view === "month" && <LeaveCalendar requests={requests} year={year} month={month} />}
+          {view === "week" && <LeaveWeekView requests={requests} anchor={now} />}
+          {view === "list" && <LeaveListView requests={requests} />}
+        </div>
+        <UpcomingLeavesPanel items={upcoming} />
+      </div>
     </>
   );
 }

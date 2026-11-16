@@ -57,3 +57,21 @@ export function currentStage(e: EmployeeOverview): LifecycleStage {
 export function isRecentEvent(iso: string): boolean {
   return daysAgo(iso) <= RECENT_WINDOW_DAYS;
 }
+
+// Usually just `[currentStage(e)]`, but Role Change and Separation aren't
+// mutually exclusive: someone can be serving notice (Separation, by status)
+// while their most recent lifecycle event was a role change shortly before
+// they gave notice. `currentStage` has to pick one for the status
+// priority chain, so Notice Period wins there - this adds Role Change back
+// in when it also applies, so the employee is counted/shown under both
+// rather than only the one `currentStage` picked.
+export function currentStages(e: EmployeeOverview): LifecycleStage[] {
+  const stage = currentStage(e);
+  if (stage === "Separation") {
+    const recent = e.lifecycleHistory[0];
+    if (recent && isRecentEvent(recent.date) && recent.type === "Role changed") {
+      return ["Role Change", "Separation"];
+    }
+  }
+  return [stage];
+}

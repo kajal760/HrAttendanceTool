@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { X } from "lucide-react";
 import type { EmployeeOverview } from "@/types/hr";
-import type { Project, WorkTask, WorkTaskStatus } from "@/types/work";
+import type { Project, WorkTask, WorkTaskStatus, WorkPriority } from "@/types/work";
+import { WORK_PRIORITIES } from "@/types/work";
 import styles from "./FormModal.module.css";
 
 const STATUS_OPTIONS: WorkTaskStatus[] = ["Pending", "Ongoing", "Completed"];
@@ -15,6 +16,7 @@ interface FormState {
   projectId: string;
   deadline: string;
   status: WorkTaskStatus;
+  priority: WorkPriority;
   dependsOnTaskId: string;
 }
 
@@ -25,6 +27,7 @@ function formFromTask(task: WorkTask | undefined, defaultProjectId: string): For
     projectId: task?.projectId ?? defaultProjectId,
     deadline: task?.deadline ?? "",
     status: task?.status ?? "Pending",
+    priority: task?.priority ?? "Medium",
     dependsOnTaskId: task?.dependsOnTaskId ?? "",
   };
 }
@@ -113,6 +116,7 @@ export default function TaskFormModal({ mode, task, projects, employees, tasks, 
         assigneeIds,
         deadline: form.deadline,
         status: form.status,
+        priority: form.priority,
         dependsOnTaskId: form.dependsOnTaskId || null,
       };
       const res = await fetch(
@@ -205,6 +209,19 @@ export default function TaskFormModal({ mode, task, projects, employees, tasks, 
                 ))}
               </select>
             </label>
+            <label className={styles.field}>
+              <span>Priority</span>
+              <select
+                value={form.priority}
+                onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value as WorkPriority }))}
+              >
+                {WORK_PRIORITIES.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className={`${styles.field} ${styles.fieldWide}`}>
               <span>Depends on (optional)</span>
               <select
@@ -240,6 +257,13 @@ export default function TaskFormModal({ mode, task, projects, employees, tasks, 
               </div>
             )}
           </div>
+
+          {mode === "edit" && task?.summary?.trim() && (
+            <div className={styles.checklistSection}>
+              <span className={styles.checklistTitle}>Summary from assignee</span>
+              <p className={styles.hint} style={{ whiteSpace: "pre-wrap" }}>{task.summary}</p>
+            </div>
+          )}
 
           {error && <div className={styles.error}>{error}</div>}
 

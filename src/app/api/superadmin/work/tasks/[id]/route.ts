@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { getTask, patchTask } from "@/lib/hr/work-store";
-import type { WorkTaskStatus } from "@/types/work";
+import { errorResponse } from "@/lib/api/backend";
+import { patchTask } from "@/lib/hr/work-store";
+import type { WorkTaskStatus, WorkPriority } from "@/types/work";
+import { WORK_PRIORITIES } from "@/types/work";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +13,7 @@ const STATUSES: WorkTaskStatus[] = ["Pending", "Ongoing", "Completed"];
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
-  const { title, description, projectId, assigneeIds, deadline, status, dependsOnTaskId } = body ?? {};
+  const { title, description, projectId, assigneeIds, deadline, status, priority, dependsOnTaskId } = body ?? {};
 
   const patch: Record<string, unknown> = {};
   if (title !== undefined) {
@@ -47,23 +49,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
     patch.status = status;
   }
-  if (dependsOnTaskId !== undefined) {
-    if (dependsOnTaskId === null || dependsOnTaskId === "") {
-      patch.dependsOnTaskId = null;
-    } else {
-      if (typeof dependsOnTaskId !== "string" || dependsOnTaskId === id) {
-        return NextResponse.json({ error: "A task cannot depend on itself." }, { status: 400 });
-      }
-      if (!(await getTask(dependsOnTaskId))) {
-        return NextResponse.json({ error: "The task it depends on was not found." }, { status: 400 });
-      }
-      patch.dependsOnTaskId = dependsOnTaskId;
+  if (priority !== undefined) {
+    if (!(WORK_PRIORITIES as string[]).includes(priority)) {
+      return NextResponse.json({ error: "Invalid priority." }, { status: 400 });
     }
+    patch.priority = priority as WorkPriority;
+  }
+  if (dependsOnTaskId !== undefined) {
+    patch.dependsOnTaskId = dependsOnTaskId === null || dependsOnTaskId === "" ? null : dependsOnTaskId;
   }
 
-  const task = await patchTask(id, patch);
-  if (!task) {
-    return NextResponse.json({ error: "Task not found." }, { status: 404 });
+  try {
+    const task = await patchTask(id, patch);
+    if (!task) {
+      return NextResponse.json({ error: "Task not found." }, { status: 404 });
+    }
+    return NextResponse.json({ task });
+  } catch (err) {
+    return errorResponse(err);
   }
-  return NextResponse.json({ task });
 }

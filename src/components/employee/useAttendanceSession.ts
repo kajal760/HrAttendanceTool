@@ -1,14 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { BreakSession, TodaySession } from "@/types/employee";
-
-const STORAGE_KEY = "hr-attendance:today-session:v1";
-
-function todayKey(): string {
-  // en-CA formats as YYYY-MM-DD in the local timezone.
-  return new Date().toLocaleDateString("en-CA");
-}
+import type { BreakSession, GeoPoint, TodaySession } from "@/types/employee";
+import type { ClockRecord } from "@/lib/hr/attendance-store";
 
 const EMPTY_SESSION: TodaySession = {
   status: "idle",
@@ -16,24 +10,17 @@ const EMPTY_SESSION: TodaySession = {
   breaks: [],
 };
 
-function loadSession(): TodaySession {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return EMPTY_SESSION;
-    const parsed = JSON.parse(raw) as TodaySession & { date: string };
-    if (parsed.date !== todayKey()) return EMPTY_SESSION;
-    return parsed;
-  } catch {
-    return EMPTY_SESSION;
-  }
-}
-
-function saveSession(session: TodaySession) {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...session, date: todayKey() }));
-  } catch {
-    // localStorage unavailable - the in-memory state still holds for this tab.
-  }
+function toSession(record: ClockRecord | null, workMode: TodaySession["workMode"]): TodaySession {
+  if (!record?.clockIn) return { ...EMPTY_SESSION, workMode };
+  const breaks: BreakSession[] = record.breaks ?? [];
+  const onBreak = breaks.some((b) => !b.endedAt);
+  return {
+    status: record.clockOut ? "clocked-out" : onBreak ? "on-break" : "clocked-in",
+    workMode: record.workMode,
+    clockInAt: record.clockIn,
+    clockOutAt: record.clockOut,
+    breaks,
+  };
 }
 
 function totalBreakMs(breaks: BreakSession[], now: number): number {
@@ -43,12 +30,11 @@ function totalBreakMs(breaks: BreakSession[], now: number): number {
   }, 0);
 }
 
-// Shared "today's clock-in session" state - same localStorage-backed session
-// read/written by both the full tracker (Attendance > Today) and the
-// dashboard's compact hours card, so clocking in on one is reflected on the
-// other. TODO: replace the geolocation capture + localStorage persistence
-// with a real `POST /api/attendance/clock-in` (and /break, /clock-out) once
-// the backend exists.
+// Shared "today's clock-in session" state for the full tracker (Attendance >
+// Today) and the dashboard's compact hours card. The record lives on the
+// backend (`/api/employee/attendance`), so clocking in on one page - or on
+// another device - shows up everywhere. Clock-in still asks the browser for
+// a location, which is stored with the record.
 export function useAttendanceSession() {
   const [session, setSession] = useState<TodaySession>(EMPTY_SESSION);
   const [now, setNow] = useState(() => Date.now());
@@ -56,7 +42,18 @@ export function useAttendanceSession() {
   const [locating, setLocating] = useState(false);
 
   useEffect(() => {
-    setSession(loadSession());
+    let cancelled = false;
+    fetch("/api/employee/attendance")
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data: { record: ClockRecord | null }) => {
+        if (!cancelled) setSession((prev) => toSession(data.record, prev.workMode));
+      })
+      .catch(() => {
+        if (!cancelled) setGeoError("Couldn't load today's attendance. Refresh to try again.");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -65,9 +62,24 @@ export function useAttendanceSession() {
     return () => window.clearInterval(id);
   }, [session.status]);
 
-  function update(next: TodaySession) {
-    setSession(next);
-    saveSession(next);
+  async function send(action: string, extra?: Record<string, unknown>) {
+    setGeoError(null);
+    try {
+      const res = await fetch("/api/employee/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ...extra }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setGeoError(data.error ?? "That didn't work - try again.");
+        return;
+      }
+      setSession(toSession(data.record, session.workMode));
+      setNow(Date.now());
+    } catch {
+      setGeoError("Couldn't reach the server - check your connection and try again.");
+    }
   }
 
   function setWorkMode(workMode: TodaySession["workMode"]) {
@@ -84,13 +96,8 @@ export function useAttendanceSession() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setLocating(false);
-        update({
-          status: "clocked-in",
-          workMode: session.workMode,
-          clockInAt: new Date().toISOString(),
-          location: { lat: position.coords.latitude, lng: position.coords.longitude },
-          breaks: [],
-        });
+        const location: GeoPoint = { lat: position.coords.latitude, lng: position.coords.longitude };
+        void send("clock-in", { workMode: session.workMode, location });
       },
       () => {
         setLocating(false);
@@ -101,25 +108,21 @@ export function useAttendanceSession() {
   }
 
   function handleStartBreak() {
-    const breakSession: BreakSession = { id: `brk-${Date.now()}`, startedAt: new Date().toISOString() };
-    update({ ...session, status: "on-break", breaks: [...session.breaks, breakSession] });
+    void send("break-start");
   }
 
   function handleEndBreak() {
-    const breaks = session.breaks.map((b, i) =>
-      i === session.breaks.length - 1 && !b.endedAt ? { ...b, endedAt: new Date().toISOString() } : b,
-    );
-    update({ ...session, status: "clocked-in", breaks });
+    void send("break-end");
   }
 
   function handleClockOut() {
-    update({ ...session, status: "clocked-out", clockOutAt: new Date().toISOString() });
+    void send("clock-out");
   }
 
   const clockInMs = session.clockInAt ? new Date(session.clockInAt).getTime() : null;
   const clockOutMs = session.clockOutAt ? new Date(session.clockOutAt).getTime() : null;
   const elapsedMs = clockInMs ? (clockOutMs ?? now) - clockInMs : 0;
-  const breakMs = totalBreakMs(session.breaks, now);
+  const breakMs = totalBreakMs(session.breaks, clockOutMs ?? now);
   const netMs = Math.max(0, elapsedMs - breakMs);
 
   return {

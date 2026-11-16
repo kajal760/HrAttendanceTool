@@ -17,12 +17,12 @@ function sign(value: string): string {
 // this simple: base64url(JSON) + "." + HMAC-SHA256 of that string, verified
 // with a constant-time comparison so this doesn't become its own timing
 // side-channel.
-export function encodeSession(payload: SessionPayload): string {
+export function encodeSignedPayload<T>(payload: T): string {
   const json = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
   return `${json}.${sign(json)}`;
 }
 
-export function decodeSession(token: string | undefined | null): SessionPayload | null {
+export function decodeSignedPayload<T>(token: string | undefined | null): T | null {
   if (!token) return null;
   const [json, signature] = token.split(".");
   if (!json || !signature) return null;
@@ -35,8 +35,16 @@ export function decodeSession(token: string | undefined | null): SessionPayload 
   }
 
   try {
-    return JSON.parse(Buffer.from(json, "base64url").toString("utf8")) as SessionPayload;
+    return JSON.parse(Buffer.from(json, "base64url").toString("utf8")) as T;
   } catch {
     return null;
   }
+}
+
+export function encodeSession(payload: SessionPayload): string {
+  return encodeSignedPayload(payload);
+}
+
+export function decodeSession(token: string | undefined | null): SessionPayload | null {
+  return decodeSignedPayload<SessionPayload>(token);
 }

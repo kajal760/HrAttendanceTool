@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import type { DirectoryPerson } from "../../types/employee";
-import { getCompanyDirectory, getTodaysBirthdays } from "./mock-data";
+import { getCompanyDirectory, getTodaysBirthdays } from "./dashboard-data";
 import { getSettings } from "@/lib/hr/settings-store";
 
 // Sends "Happy Birthday" emails for everyone whose birthday is today,
@@ -30,10 +30,10 @@ function renderBirthdayEmailHtml(person: DirectoryPerson): string {
       <h1 style="font-size: 22px;">🎉 Happy Birthday, ${person.name}!</h1>
       <p style="font-size: 15px; line-height: 1.6; color: #333;">
         Wishing you a fantastic day filled with celebration and joy, from
-        everyone at HR Attendance. Thank you for everything you bring to the
+        everyone at HumSetu. Thank you for everything you bring to the
         ${person.department} team!
       </p>
-      <p style="font-size: 15px; color: #333;">&mdash; Team HR Attendance</p>
+      <p style="font-size: 15px; color: #333;">&mdash; Team HumSetu</p>
     </div>
   `;
 }

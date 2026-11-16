@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, CheckCircle2, Paperclip, Pencil } from "lucide-react";
+import { Eye, Paperclip, Pencil } from "lucide-react";
 import type { Announcement } from "@/types/announcement";
 import type { EmployeeOverview } from "@/types/hr";
 import { announcementStatus, audienceLabel, resolveAudience } from "@/lib/announcements/status";
@@ -35,7 +35,6 @@ export default function AnnouncementDetail({ announcement: initial, employees }:
   const status = announcementStatus(announcement);
   const recipients = resolveAudience(announcement.audience, employees);
   const readPct = recipients.length === 0 ? 0 : Math.round((announcement.reads.length / recipients.length) * 100);
-  const ackPct = recipients.length === 0 ? 0 : Math.round((announcement.acknowledgements.length / recipients.length) * 100);
 
   async function transition(lifecycle: "Live" | "Archived", publishNow?: boolean) {
     setBusy(true);
@@ -81,7 +80,7 @@ export default function AnnouncementDetail({ announcement: initial, employees }:
               Unarchive &amp; republish
             </button>
           )}
-          <Link href={withBase(base, `/announcements/${announcement.id}/edit`)} className={styles.editLink}>
+          <Link href={withBase(base, `/company-updates/announcements/${announcement.id}/edit`)} className={styles.editLink}>
             <Pencil size={13} /> Edit
           </Link>
         </div>
@@ -114,16 +113,6 @@ export default function AnnouncementDetail({ announcement: initial, employees }:
             {announcement.reads.length} ({readPct}%)
           </span>
         </div>
-        {announcement.requireAcknowledgement && (
-          <div className={styles.statCard}>
-            <span className={styles.statLabel}>
-              <CheckCircle2 size={13} /> Acknowledged
-            </span>
-            <span className={styles.statValue}>
-              {announcement.acknowledgements.length} ({ackPct}%)
-            </span>
-          </div>
-        )}
         {announcement.expiresAt && (
           <div className={styles.statCard}>
             <span className={styles.statLabel}>Expires</span>
@@ -147,7 +136,7 @@ export default function AnnouncementDetail({ announcement: initial, employees }:
         </ul>
       </div>
 
-      <button type="button" className={styles.backButton} onClick={() => router.push(withBase(base, "/announcements"))}>
+      <button type="button" className={styles.backButton} onClick={() => router.push(withBase(base, "/company-updates/announcements"))}>
         ← Back to announcements
       </button>
     </div>

@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { getAttendanceCalendar, getTimesheetLog } from "@/lib/employee/mock-data";
+import { getAttendanceCalendar, getTimesheetLog } from "@/lib/employee/dashboard-data";
+import { requireCurrentEmployee } from "@/lib/auth/current-employee";
 import SectionCard from "@/components/employee/SectionCard";
 import DateRangeFilter from "@/components/employee/DateRangeFilter";
 import TimesheetSummary from "@/components/employee/TimesheetSummary";
 import AttendanceHistoryView from "@/components/employee/AttendanceHistoryView";
 
 export const metadata: Metadata = {
-  title: "Attendance History | HR Attendance",
+  title: "Attendance History | HumSetu",
 };
 
 type SearchParams = { year?: string; month?: string; from?: string; to?: string };
@@ -16,6 +17,7 @@ export default async function EmployeeAttendanceHistoryPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  const employee = await requireCurrentEmployee();
   const params = await searchParams;
   const now = new Date();
   const year = params.year ? Number(params.year) : now.getFullYear();
@@ -23,7 +25,10 @@ export default async function EmployeeAttendanceHistoryPage({
   const from = params.from ?? "";
   const to = params.to ?? "";
 
-  const [all, calendarDays] = await Promise.all([getTimesheetLog(), getAttendanceCalendar(year, month)]);
+  const [all, calendarDays] = await Promise.all([
+    getTimesheetLog(employee.id),
+    getAttendanceCalendar(employee.id, year, month),
+  ]);
   const entries = all.filter((e) => (!from || e.date >= from) && (!to || e.date <= to));
 
   return (

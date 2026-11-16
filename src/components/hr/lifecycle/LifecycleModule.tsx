@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { EmployeeOverview } from "@/types/hr";
-import { currentStage, LIFECYCLE_STAGES, type LifecycleStage } from "./stage";
+import { currentStages, LIFECYCLE_STAGES, type LifecycleStage } from "./stage";
 import OverviewTab from "./OverviewTab";
 import OnboardingTab from "./OnboardingTab";
 import EmploymentChangesTab from "./EmploymentChangesTab";
@@ -40,10 +40,14 @@ export default function LifecycleModule({ employees: initial, tab }: LifecycleMo
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((e) => ({ id: e.id, name: e.name }));
 
+  // An employee can land in more than one stage at once (see currentStages -
+  // Role Change + Separation can overlap), so this sums to more than
+  // `employees.length` whenever that happens, by design.
   const stageCounts = new Map<LifecycleStage, number>(LIFECYCLE_STAGES.map((st) => [st, 0]));
   for (const e of employees) {
-    const st = currentStage(e);
-    stageCounts.set(st, (stageCounts.get(st) ?? 0) + 1);
+    for (const st of currentStages(e)) {
+      stageCounts.set(st, (stageCounts.get(st) ?? 0) + 1);
+    }
   }
 
   const detailEmployee = employees.find((e) => e.id === detailId) ?? null;

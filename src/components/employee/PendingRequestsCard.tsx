@@ -30,7 +30,7 @@ export default function PendingRequestsCard({
           <span className={styles.tileLabel}>Attendance corrections</span>
         </Link>
 
-        <Link href="/employee/leave/history" className={`${styles.tile} ${styles["tone-purple"]}`}>
+        <Link href="/employee/leave" className={`${styles.tile} ${styles["tone-purple"]}`}>
           <span className={styles.tileIcon}>
             <CalendarDays size={15} strokeWidth={2} />
           </span>

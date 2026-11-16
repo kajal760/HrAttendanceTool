@@ -32,7 +32,7 @@ export default function DepartmentOverviewTable({ rows }: DepartmentOverviewTabl
             <tr key={row.name}>
               <td>
                 <Link
-                  href={withBase(base, `/employees?department=${encodeURIComponent(row.name)}`)}
+                  href={withBase(base, `/employees/directory?department=${encodeURIComponent(row.name)}`)}
                   className={styles.deptLink}
                 >
                   {row.name}

@@ -22,8 +22,8 @@ interface AnnouncementPreviewListProps {
 }
 
 // Compact shortcut list for the dashboard - the full card (priority badge,
-// excerpt, acknowledgement state) lives on /employee/announcements via
-// EmployeeAnnouncementCard. This just gets someone to the right notice fast.
+// excerpt) lives on /employee/announcements via EmployeeAnnouncementCard.
+// This just gets someone to the right notice fast.
 export default function AnnouncementPreviewList({ items }: AnnouncementPreviewListProps) {
   if (items.length === 0) {
     return <span style={{ fontSize: 13, color: "var(--color-text-muted)" }}>No announcements right now.</span>;

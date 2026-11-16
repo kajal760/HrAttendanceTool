@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { Pencil, Info } from "lucide-react";
 import type { EmployeeOverview } from "@/types/hr";
-import { formatDate } from "@/lib/employee/profile-format";
-import Fact from "./Fact";
 import styles from "./Profile.module.css";
 
 interface EditableFields {
@@ -44,6 +42,7 @@ export default function PersonalDetails({ employee: initialEmployee }: PersonalD
   }
 
   function cancelEdit() {
+    setFields(fieldsFrom(employee));
     setEditing(false);
     setError(null);
   }
@@ -90,48 +89,45 @@ export default function PersonalDetails({ employee: initialEmployee }: PersonalD
         </div>
       )}
 
-      {editing ? (
-        <>
-          <p className={styles.sectionNote}>Date of birth, gender, and marital status - editable by you.</p>
-          <div className={styles.editFieldGrid}>
-            <label className={styles.editField}>
-              Date of birth
-              <input
-                type="date"
-                value={fields.dateOfBirth}
-                onChange={(e) => setField("dateOfBirth", e.target.value)}
-              />
-            </label>
-            <label className={styles.editField}>
-              Gender
-              <input value={fields.gender} onChange={(e) => setField("gender", e.target.value)} />
-            </label>
-            <label className={styles.editField}>
-              Marital status
-              <input value={fields.maritalStatus} onChange={(e) => setField("maritalStatus", e.target.value)} />
-            </label>
-          </div>
+      <p className={styles.sectionNote}>Date of birth, gender, and marital status - editable by you.</p>
+      <div className={styles.editFieldGrid}>
+        <label className={styles.editField}>
+          Date of birth
+          <input
+            type="date"
+            value={fields.dateOfBirth}
+            disabled={!editing}
+            onChange={(e) => setField("dateOfBirth", e.target.value)}
+          />
+        </label>
+        <label className={styles.editField}>
+          Gender
+          <input value={fields.gender} disabled={!editing} onChange={(e) => setField("gender", e.target.value)} />
+        </label>
+        <label className={styles.editField}>
+          Marital status
+          <input
+            value={fields.maritalStatus}
+            disabled={!editing}
+            onChange={(e) => setField("maritalStatus", e.target.value)}
+          />
+        </label>
+      </div>
 
-          {error && (
-            <p className={styles.sectionNote} style={{ color: "var(--color-danger)" }}>
-              {error}
-            </p>
-          )}
+      {editing && error && (
+        <p className={styles.sectionNote} style={{ color: "var(--color-danger)" }}>
+          {error}
+        </p>
+      )}
 
-          <div className={styles.editActions}>
-            <button type="button" className={styles.cancelButton} onClick={cancelEdit} disabled={saving}>
-              Cancel
-            </button>
-            <button type="button" className={styles.saveButton} onClick={handleSave} disabled={saving}>
-              {saving ? "Saving..." : "Save changes"}
-            </button>
-          </div>
-        </>
-      ) : (
-        <div className={styles.factGrid}>
-          <Fact label="Date of birth" value={formatDate(employee.dateOfBirth)} />
-          <Fact label="Gender" value={employee.gender ?? "-"} />
-          <Fact label="Marital status" value={employee.maritalStatus ?? "-"} />
+      {editing && (
+        <div className={styles.editActions}>
+          <button type="button" className={styles.cancelButton} onClick={cancelEdit} disabled={saving}>
+            Cancel
+          </button>
+          <button type="button" className={styles.saveButton} onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : "Save changes"}
+          </button>
         </div>
       )}
 

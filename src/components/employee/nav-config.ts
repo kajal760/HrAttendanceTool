@@ -3,14 +3,19 @@
 // SECTION_TABS) for sub-pages within whichever section is active - same
 // pattern as the Super Admin portal's nav-config.ts.
 //
-// Primary items and their sub-tabs follow the BRD's employee navigation
-// spec exactly: Attendance and Leave are separate top-level sections (not
-// combined), and Tasks & Projects, My Profile, and Documents each have
-// their own BRD-specified sub-tabs. Requests/Announcements/Assets aren't in
-// the BRD's list (it calls them out as separate/future modules) but already
-// have working pages here, so they stay reachable as a secondary group
-// rather than being cut. Timesheets and the old standalone "Clock ins/outs"
-// page were retired - both are now covered by Attendance's History tab.
+// Attendance and Leave are combined under one "Attendance & Leave" primary
+// section (not the BRD's original split) - Leave is reachable as one of
+// its horizontal tabs, landing on a single page with a Chart.js summary,
+// a graph/table-toggleable history, and an "Apply for Leave" button that
+// goes to the apply form. Tasks & Projects and Documents keep their own
+// BRD-specified sub-tabs. My Profile has no sub-tabs - personal details,
+// contact/emergency contact, and work details all live on the one
+// /employee/profile landing page now, not three tab-separated pages.
+// Requests/Announcements/Assets aren't in the BRD's list (it calls them out
+// as separate/future modules) but already have working pages here, so they
+// stay reachable as a secondary group rather than being cut. Timesheets and
+// the old standalone "Clock ins/outs" page were retired - both are now
+// covered by Attendance's History tab.
 
 export interface EmployeeNavItem {
   key: string;
@@ -20,8 +25,7 @@ export interface EmployeeNavItem {
 
 export const PRIMARY_NAV: EmployeeNavItem[] = [
   { key: "dashboard", label: "Dashboard", href: "/employee" },
-  { key: "attendance", label: "Attendance", href: "/employee/attendance" },
-  { key: "leave", label: "Leave", href: "/employee/leave" },
+  { key: "attendance", label: "Attendance & Leave", href: "/employee/attendance" },
   { key: "tasks", label: "Tasks & Projects", href: "/employee/tasks" },
   { key: "profile", label: "My Profile", href: "/employee/profile" },
   { key: "documents", label: "Documents", href: "/employee/documents" },
@@ -31,6 +35,9 @@ export const SECONDARY_NAV: EmployeeNavItem[] = [
   { key: "requests", label: "Requests", href: "/employee/requests" },
   { key: "announcements", label: "Announcements", href: "/employee/announcements" },
   { key: "assets", label: "Assets", href: "/employee/assets" },
+  { key: "training", label: "Training", href: "/employee/training" },
+  { key: "org", label: "Org Structure", href: "/employee/org" },
+  { key: "posh", label: "POSH", href: "/employee/posh" },
 ];
 
 export interface SecondaryTab {
@@ -42,29 +49,20 @@ export const SECTION_TABS: Record<string, SecondaryTab[]> = {
   attendance: [
     { label: "Today", href: "/employee/attendance" },
     { label: "Attendance History", href: "/employee/attendance/history" },
-    { label: "Breaks", href: "/employee/attendance/breaks" },
     { label: "Timesheet", href: "/employee/attendance/timesheet" },
     { label: "Corrections", href: "/employee/attendance/corrections" },
-  ],
-  leave: [
-    { label: "Leave Balance", href: "/employee/leave" },
-    { label: "Apply Leave", href: "/employee/leave/apply" },
-    { label: "Leave History", href: "/employee/leave/history" },
+    { label: "Leave", href: "/employee/leave" },
   ],
   tasks: [
     { label: "My Tasks", href: "/employee/tasks" },
     { label: "Projects", href: "/employee/projects" },
     { label: "Dependencies", href: "/employee/tasks/dependencies" },
   ],
-  profile: [
-    { label: "Personal Details", href: "/employee/profile" },
-    { label: "Contact", href: "/employee/profile/contact" },
-    { label: "Work Details", href: "/employee/profile/work" },
-  ],
   documents: [
-    { label: "Company Policies", href: "/employee/documents" },
+    { label: "HR Policies", href: "/employee/documents" },
     { label: "SOPs", href: "/employee/documents/sops" },
     { label: "Reporting Hierarchy", href: "/employee/documents/hierarchy" },
+    { label: "Certificates", href: "/employee/documents/certificates" },
   ],
 };
 

@@ -16,6 +16,12 @@ export type WorkTaskDisplayStatus = WorkTaskStatus | "Overdue";
 // Active.
 export type ProjectRollupStatus = "Active" | "Completed" | "Upcoming" | "Delayed";
 
+// Manager/HR-set priority - independent of status/deadline, since urgency
+// and lifecycle stage are different questions (a Pending task can be either
+// High or Low priority).
+export type WorkPriority = "High" | "Medium" | "Low";
+export const WORK_PRIORITIES: WorkPriority[] = ["High", "Medium", "Low"];
+
 export interface Project {
   id: string;
   name: string;
@@ -23,6 +29,7 @@ export interface Project {
   memberIds: string[]; // employees assigned to this project
   departmentName?: string; // the department this project is run from
   deadline?: string; // YYYY-MM-DD, optional overall project deadline
+  priority: WorkPriority;
   createdOn: string; // ISO
   createdBy: string; // placeholder until real auth exists
 }
@@ -35,6 +42,7 @@ export interface WorkTask {
   assigneeIds: string[]; // 1 = solo, 2+ = group task
   deadline: string; // YYYY-MM-DD
   status: WorkTaskStatus;
+  priority: WorkPriority;
   // Manager/HR-set: another task (normally in the same project) that blocks
   // this one. A single link, not a dependency graph - see `patchTask`'s
   // validation for why cycles aren't detected.

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { DailyRecord } from "@/lib/hr/attendance-daily";
 import { fmtDuration } from "@/lib/hr/attendance-format";
 import { toneClass } from "../lifecycle/badge-tones";
+import StatCard from "../StatCard";
 import styles from "../lifecycle/Lifecycle.module.css";
 import AttendanceTable from "./AttendanceTable";
 import WorkModeSwitch from "./WorkModeSwitch";
@@ -109,10 +110,7 @@ export default function PeriodSummary({ records: allRecords, periodLabel }: Peri
 
       <div className={styles.statGrid}>
         {cards.map((c) => (
-          <div key={c.label} className={styles.statCard}>
-            <span className={styles.statValue}>{c.value}</span>
-            <span className={styles.statLabel}>{c.label}</span>
-          </div>
+          <StatCard key={c.label} label={c.label} value={c.value} />
         ))}
       </div>
 

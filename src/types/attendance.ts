@@ -1,18 +1,15 @@
 // Attendance and leave history shown on employee profiles.
 
-export const LEAVE_CATEGORIES = [
-  "Casual",
-  "Sick",
-  "Compensatory",
-  "Mandatory",
-  "Birthday",
-  "Work Anniversary",
-] as const;
-export type LeaveCategory = (typeof LEAVE_CATEGORIES)[number];
+// Same category vocabulary as the real Leave module (`@/types/employee`) -
+// re-exported rather than duplicated, so adding a leave category there
+// (e.g. Leave Without Pay) can't silently drift out of sync with this
+// view's category list the way the old locally-duplicated enum did.
+export type { LeaveCategory } from "@/types/employee";
+import type { LeaveCategory } from "@/types/employee";
 
-export type LeaveStatus = "Pending" | "Approved" | "Rejected";
+export type LeaveStatus = "Pending" | "Approved" | "Rejected" | "Cancelled";
 
-export interface LeaveRequest {
+export interface LeaveHistoryEntry {
   id: string;
   category: LeaveCategory;
   from: string; // YYYY-MM-DD
@@ -22,15 +19,15 @@ export interface LeaveRequest {
   appliedOn: string; // YYYY-MM-DD
 }
 
-export type AttendanceDayStatus = "Present" | "Late" | "WFH" | "Absent" | "On Leave";
+export type AttendanceHistoryDayStatus = "Present" | "Late" | "Half Day" | "WFH" | "Absent" | "On Leave" | "Holiday";
 
 export interface AttendanceDay {
   date: string; // YYYY-MM-DD
-  status: AttendanceDayStatus;
+  status: AttendanceHistoryDayStatus;
 }
 
 export interface AttendanceHistory {
-  leaves: LeaveRequest[];
+  leaves: LeaveHistoryEntry[];
   days: AttendanceDay[]; // most recent first
   summary: {
     present: number;

@@ -6,7 +6,7 @@ import { findTasksBlockedByMine, resolveTasksWithProject } from "@/lib/employee/
 import TaskDependenciesView from "@/components/employee/TaskDependenciesView";
 
 export const metadata: Metadata = {
-  title: "Dependencies | HR Attendance",
+  title: "Dependencies | HumSetu",
 };
 
 export const dynamic = "force-dynamic";
@@ -15,9 +15,9 @@ export default async function EmployeeTaskDependenciesPage() {
   const employee = await requireCurrentEmployee();
   const [myTasks, allTasks, projects, employees] = await Promise.all([
     getTasksForEmployee(employee.id),
-    getTasks(),
-    getProjects(),
-    getEmployeeOverviews(),
+    getTasks().catch(() => []),
+    getProjects().catch(() => []),
+    getEmployeeOverviews().catch(() => []),
   ]);
 
   const resolved = resolveTasksWithProject(myTasks, allTasks, projects);

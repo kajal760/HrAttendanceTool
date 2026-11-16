@@ -1,14 +1,35 @@
 import { NextResponse } from "next/server";
-import { getUsers } from "@/lib/auth/user-store";
+import { errorResponse } from "@/lib/api/backend";
+import { createUserLogin } from "@/lib/auth/user-store";
+import { getSession } from "@/lib/auth/get-session";
 
 export const dynamic = "force-dynamic";
 
-// Minimal account list for the Lifecycle module's Role Change form - just
-// enough to show "this employee's login is currently HR" without ever
-// shipping password hashes to the client.
-export async function GET() {
-  const users = await getUsers();
-  return NextResponse.json({
-    users: users.map((u) => ({ id: u.id, email: u.email, role: u.role, name: u.name, employeeId: u.employeeId })),
-  });
+// Matches the Roles & Permissions matrix's "Create HR / Employee login
+// accounts" feature, which defaults to HR (and Admin) only.
+export async function POST(request: Request) {
+  const session = await getSession();
+  if (session?.role !== "HR" && session?.role !== "Admin") {
+    return NextResponse.json({ error: "Only HR can create login accounts." }, { status: 403 });
+  }
+
+  const body = await request.json();
+  const employeeId = typeof body?.employeeId === "string" ? body.employeeId : "";
+  const email = typeof body?.email === "string" ? body.email.trim() : "";
+  const password = typeof body?.password === "string" ? body.password : "";
+  const role = body?.role === "HR" || body?.role === "Employee" ? body.role : null;
+
+  if (!employeeId || !email || !password || !role) {
+    return NextResponse.json({ error: "An employee, email, password, and role are required." }, { status: 400 });
+  }
+  if (password.length < 8) {
+    return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
+  }
+
+  try {
+    await createUserLogin({ employeeId, email, password, role });
+    return NextResponse.json({ ok: true }, { status: 201 });
+  } catch (err) {
+    return errorResponse(err);
+  }
 }

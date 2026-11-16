@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Eye, CheckCircle2, Paperclip } from "lucide-react";
+import { Eye, Paperclip } from "lucide-react";
 import type { Announcement } from "@/types/announcement";
 import type { EmployeeOverview } from "@/types/hr";
 import { announcementStatus, audienceLabel, resolveAudience } from "@/lib/announcements/status";
@@ -72,15 +72,10 @@ export default function AnnouncementCard({ announcement, employees }: Announceme
           <span className={styles.stat}>
             <Eye size={14} /> {announcement.reads.length} / {recipients.length} read
           </span>
-          {announcement.requireAcknowledgement && (
-            <span className={styles.stat}>
-              <CheckCircle2 size={14} /> {announcement.acknowledgements.length} acknowledged
-            </span>
-          )}
         </div>
       )}
 
-      <Link href={withBase(base, `/announcements/${announcement.id}`)} className={styles.viewLink}>
+      <Link href={withBase(base, `/company-updates/announcements/${announcement.id}`)} className={styles.viewLink}>
         View Announcement →
       </Link>
     </div>

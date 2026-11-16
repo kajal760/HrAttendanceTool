@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { decideCorrection } from "@/lib/hr/attendance-corrections";
+import { errorResponse } from "@/lib/api/backend";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +11,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (status !== "Approved" && status !== "Rejected") {
     return NextResponse.json({ error: "Status must be Approved or Rejected." }, { status: 400 });
   }
-  const result = await decideCorrection(id, status);
-  if (result === null) return NextResponse.json({ error: "Request not found." }, { status: 404 });
-  if (result === "already-decided") {
-    return NextResponse.json({ error: "This request has already been decided." }, { status: 409 });
+  try {
+    const result = await decideCorrection(id, status);
+    if (result === null) return NextResponse.json({ error: "Request not found." }, { status: 404 });
+    if (result === "already-decided") {
+      return NextResponse.json({ error: "This request has already been decided." }, { status: 409 });
+    }
+    return NextResponse.json({ correction: result });
+  } catch (err) {
+    return errorResponse(err);
   }
-  return NextResponse.json({ correction: result });
 }

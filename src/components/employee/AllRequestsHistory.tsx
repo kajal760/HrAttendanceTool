@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { AssetRequest, HrRequest, LeaveRequest } from "@/types/employee";
+import { HR_REQUESTS_UPDATED_EVENT } from "./HrRequestPanel";
 import Pager from "./Pager";
 import styles from "./AllRequestsHistory.module.css";
 
@@ -11,7 +12,7 @@ const ASSET_KEY = "hr-attendance:asset-requests:v1";
 const HR_KEY = "hr-attendance:hr-requests:v1";
 
 type RequestKind = "Leave" | "Assets" | "WFH" | "Other";
-type RequestRowStatus = "Pending" | "Approved" | "Rejected";
+type RequestRowStatus = "Pending" | "Approved" | "Rejected" | "Cancelled";
 
 interface UnifiedRow {
   id: string;
@@ -28,6 +29,7 @@ const BADGE_CLASS: Record<RequestRowStatus, string> = {
   Pending: "badge-pending",
   Approved: "badge-approved",
   Rejected: "badge-rejected",
+  Cancelled: "badge-cancelled",
 };
 
 function formatDate(iso: string): string {
@@ -76,40 +78,50 @@ export default function AllRequestsHistory({
   const [page, setPage] = useState(0);
 
   useEffect(() => {
-    const assets = readStorage(ASSET_KEY, initialAssetRequests);
-    const hr = readStorage(HR_KEY, initialHrRequests);
+    function refresh() {
+      const assets = readStorage(ASSET_KEY, initialAssetRequests);
+      const hr = readStorage(HR_KEY, initialHrRequests);
 
-    const merged: UnifiedRow[] = [
-      ...leaveRequests.map((r): UnifiedRow => ({
-        id: r.id,
-        kind: "Leave",
-        type: r.category,
-        summary: r.reason,
-        status: r.status,
-        submittedAt: r.submittedAt,
-      })),
-      ...assets.map((r): UnifiedRow => ({
-        id: r.id,
-        kind: "Assets",
-        type: r.type,
-        summary: r.note,
-        status: r.status,
-        submittedAt: r.submittedAt,
-      })),
-      ...hr.map((r): UnifiedRow => ({
-        id: r.id,
-        kind: hrRequestKind(r.category),
-        type: r.category === "Other" ? r.otherLabel || "Other" : r.category,
-        summary: r.summary,
-        status: r.status,
-        submittedAt: r.submittedAt,
-      })),
-    ];
-    merged.sort((a, b) => (a.submittedAt < b.submittedAt ? 1 : -1));
-    setRows(merged);
-    // Assets/HR storage only needs reading on mount (each source page owns
-    // writing to its own key); leaveRequests is a real server-fetched prop,
-    // so it's a legitimate dependency.
+      const merged: UnifiedRow[] = [
+        ...leaveRequests.map((r): UnifiedRow => ({
+          id: r.id,
+          kind: "Leave",
+          type: r.category,
+          summary: r.reason,
+          status: r.status,
+          submittedAt: r.submittedAt,
+        })),
+        ...assets.map((r): UnifiedRow => ({
+          id: r.id,
+          kind: "Assets",
+          type: r.type,
+          summary: r.note,
+          status: r.status,
+          submittedAt: r.submittedAt,
+        })),
+        ...hr.map((r): UnifiedRow => ({
+          id: r.id,
+          kind: hrRequestKind(r.category),
+          type: r.category === "Other" ? r.otherLabel || "Other" : r.category,
+          summary: r.summary,
+          status: r.status,
+          submittedAt: r.submittedAt,
+        })),
+      ];
+      merged.sort((a, b) => (a.submittedAt < b.submittedAt ? 1 : -1));
+      setRows(merged);
+    }
+
+    refresh();
+    // `HrRequestPanel` is a sibling, not a parent/child, so a request it
+    // saves to localStorage doesn't trigger a re-render here on its own -
+    // it dispatches this event after saving so this list picks it up
+    // immediately instead of only on next mount/navigation.
+    window.addEventListener(HR_REQUESTS_UPDATED_EVENT, refresh);
+    return () => window.removeEventListener(HR_REQUESTS_UPDATED_EVENT, refresh);
+    // Assets/HR storage only needs reading on mount + the event above (each
+    // source page owns writing to its own key); leaveRequests is a real
+    // server-fetched prop, so it's a legitimate dependency.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaveRequests]);
 

@@ -22,7 +22,7 @@ export default function LeaveHolidaysCard({ balances, holidays }: LeaveHolidaysC
       <div className={styles.balanceRow}>
         {balances.map((b) => (
           <div className={styles.balanceChip} key={b.type}>
-            <span className={styles.balanceValue}>{b.remaining}</span>
+            <span className={styles.balanceValue}>{b.allocated > 0 ? b.remaining : b.used}</span>
             <span className={styles.balanceLabel}>{b.type.replace(" Leave", "")}</span>
           </div>
         ))}

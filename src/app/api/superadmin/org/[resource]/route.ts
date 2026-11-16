@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { addOrgRegistryItem, getOrgRegistry } from "@/lib/hr/org-registry-store";
+import { getSession } from "@/lib/auth/get-session";
 import type { OrgRegistryResource } from "@/types/hr";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ res
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ resource: string }> }) {
+  // Org Structure is viewable by Admin and Employee too, but only HR may
+  // edit it - this backs that up server side regardless of what the UI hides.
+  const session = await getSession();
+  if (session?.role !== "HR") {
+    return NextResponse.json({ error: "Only HR can edit the org structure." }, { status: 403 });
+  }
+
   const { resource } = await params;
   if (!isResource(resource)) {
     return NextResponse.json({ error: "Unknown resource." }, { status: 404 });

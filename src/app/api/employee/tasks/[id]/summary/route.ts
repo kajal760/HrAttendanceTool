@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/backend";
 import { updateTaskSummary } from "@/lib/hr/work-store";
 import { getEmployeeOverviews } from "@/lib/hr/employee-store";
 import { getSession } from "@/lib/auth/get-session";
@@ -6,10 +7,10 @@ import { getSession } from "@/lib/auth/get-session";
 export const dynamic = "force-dynamic";
 
 // The only writes an employee can make to their own task - every other field
-// is manager/HR-only (see `/api/superadmin/work/tasks/[id]`). `employeeId`
-// comes from the session, not the request body, so one employee can't spoof
-// another's id to write their task summary; the store still separately
-// rejects the write if that id isn't actually an assignee.
+// is manager/HR-only (see `/api/superadmin/work/tasks/[id]`). The backend
+// takes the employee from the session token, not the request body, so one
+// employee can't spoof another's id; it still separately 403s if that
+// employee isn't actually an assignee.
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session?.employeeId) {
@@ -37,12 +38,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     cleanMentionedIds = mentionedIds.filter((m) => validIds.has(m));
   }
 
-  const result = await updateTaskSummary(id, session.employeeId, summary.trim(), cleanMentionedIds);
-  if (result === null) {
-    return NextResponse.json({ error: "Task not found." }, { status: 404 });
+  try {
+    const result = await updateTaskSummary(id, session.employeeId, summary.trim(), cleanMentionedIds);
+    if (result === null) {
+      return NextResponse.json({ error: "Task not found." }, { status: 404 });
+    }
+    if (result === "forbidden") {
+      return NextResponse.json({ error: "Only an assignee can write this task's summary." }, { status: 403 });
+    }
+    return NextResponse.json({ task: result });
+  } catch (err) {
+    return errorResponse(err);
   }
-  if (result === "forbidden") {
-    return NextResponse.json({ error: "Only an assignee can write this task's summary." }, { status: 403 });
-  }
-  return NextResponse.json({ task: result });
 }

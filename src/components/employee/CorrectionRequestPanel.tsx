@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
-import type { CorrectionRequest, CorrectionRequestStatus } from "@/types/employee";
+import { useState, type FormEvent } from "react";
+import type { CorrectionRequest, CorrectionStatus } from "@/lib/hr/attendance-corrections";
 import styles from "./CorrectionRequestPanel.module.css";
 
-const STORAGE_KEY = "hr-attendance:correction-requests:v1";
-
-const BADGE_CLASS: Record<CorrectionRequestStatus, string> = {
+const BADGE_CLASS: Record<CorrectionStatus, string> = {
   Pending: "badge-pending",
   Approved: "badge-approved",
   Rejected: "badge-rejected",
@@ -24,29 +22,10 @@ function formatDate(date: string): string {
   });
 }
 
-function loadStored(fallback: CorrectionRequest[]): CorrectionRequest[] {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as CorrectionRequest[]) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function saveStored(requests: CorrectionRequest[]) {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
-  } catch {
-    // localStorage unavailable - in-memory state still holds for this tab.
-  }
-}
-
 interface CorrectionRequestPanelProps {
   initialRequests: CorrectionRequest[];
 }
 
-// TODO: submit to `POST /api/attendance/corrections` for real HR review
-// once the backend exists; this persists to localStorage as a stand-in.
 export default function CorrectionRequestPanel({
   initialRequests,
 }: CorrectionRequestPanelProps) {
@@ -57,12 +36,7 @@ export default function CorrectionRequestPanel({
   const [clockOut, setClockOut] = useState("");
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setRequests(loadStored(initialRequests));
-    // Only merge from storage on mount; initialRequests is a static prop.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [submitting, setSubmitting] = useState(false);
 
   function resetForm() {
     setDate(todayKey());
@@ -72,7 +46,7 @@ export default function CorrectionRequestPanel({
     setError(null);
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!date || !clockIn || reason.trim().length < 10) {
       setError(
@@ -81,21 +55,32 @@ export default function CorrectionRequestPanel({
       return;
     }
 
-    const request: CorrectionRequest = {
-      id: `corr-${Date.now()}`,
-      date,
-      requestedClockIn: clockIn,
-      requestedClockOut: clockOut || undefined,
-      reason: reason.trim(),
-      status: "Pending",
-      submittedAt: new Date().toISOString(),
-    };
-
-    const next = [request, ...requests];
-    setRequests(next);
-    saveStored(next);
-    resetForm();
-    setShowForm(false);
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/employee/attendance/corrections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date,
+          requestedCheckIn: clockIn,
+          requestedCheckOut: clockOut || undefined,
+          reason: reason.trim(),
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body?.error ?? "Could not submit the request. Please try again.");
+        return;
+      }
+      setRequests((prev) => [body.request as CorrectionRequest, ...prev]);
+      resetForm();
+      setShowForm(false);
+    } catch {
+      setError("Could not submit the request. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -152,8 +137,8 @@ export default function CorrectionRequestPanel({
           </label>
           {error && <span className={styles.error}>{error}</span>}
           <div className={styles.formActions}>
-            <button type="submit" className={styles.submitButton}>
-              Submit for HR approval
+            <button type="submit" className={styles.submitButton} disabled={submitting}>
+              {submitting ? "Submitting..." : "Submit for HR approval"}
             </button>
             <button
               type="button"
@@ -187,8 +172,8 @@ export default function CorrectionRequestPanel({
               <tr key={req.id}>
                 <td>{formatDate(req.date)}</td>
                 <td className={styles.muted}>
-                  {req.requestedClockIn}
-                  {req.requestedClockOut ? ` – ${req.requestedClockOut}` : ""}
+                  {req.requestedCheckIn}
+                  {req.requestedCheckOut ? ` – ${req.requestedCheckOut}` : ""}
                 </td>
                 <td className={styles.reasonCell}>{req.reason}</td>
                 <td>
@@ -196,7 +181,7 @@ export default function CorrectionRequestPanel({
                     {req.status}
                   </span>
                 </td>
-                <td className={styles.muted}>{formatDate(req.submittedAt)}</td>
+                <td className={styles.muted}>{formatDate(req.submittedOn)}</td>
               </tr>
             ))}
           </tbody>

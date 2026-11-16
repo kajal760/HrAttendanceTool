@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import ColorTestClient from "./ColorTestClient";
 
 export const metadata: Metadata = {
-  title: "Color Test | HR Attendance",
+  title: "Color Test | HumSetu",
 };
 
 // Scratch sandbox for trying out color tokens against the real Profile

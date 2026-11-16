@@ -25,10 +25,7 @@ export function netMin(r: DailyRecord): number | null {
   return r.checkIn ? r.workingMin : null;
 }
 
-export function fmtHm(min: number | null | undefined): string {
-  if (min === null || min === undefined) return "-";
-  return `${Math.floor(min / 60)}h ${String(min % 60).padStart(2, "0")}m`;
-}
+export { fmtDuration as fmtHm } from "@/lib/hr/attendance-format";
 
 export function fmtHours(min: number): string {
   return `${(min / 60).toFixed(1)}h`;

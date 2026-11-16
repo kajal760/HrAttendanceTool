@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import SectionCard from "@/components/employee/SectionCard";
 import LeaveApplyForm from "@/components/employee/LeaveApplyForm";
+import { getLeaveTypes } from "@/lib/hr/leave-store";
 
 export const metadata: Metadata = {
-  title: "Apply Leave | HR Attendance",
+  title: "Apply Leave | HumSetu",
 };
 
-export default function EmployeeLeaveApplyPage() {
+export const dynamic = "force-dynamic";
+
+export default async function EmployeeLeaveApplyPage() {
+  const leaveTypes = await getLeaveTypes();
+
   return (
     <>
       <div style={{ marginBottom: 20 }}>
@@ -17,7 +22,7 @@ export default function EmployeeLeaveApplyPage() {
       </div>
 
       <SectionCard title="New leave request">
-        <LeaveApplyForm />
+        <LeaveApplyForm leaveTypes={leaveTypes} />
       </SectionCard>
     </>
   );

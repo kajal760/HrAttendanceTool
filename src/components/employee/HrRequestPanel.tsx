@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import type { HrRequest, HrRequestCategory, RequestRecipient } from "@/types/employee";
 import MentionRecipientPicker from "./MentionRecipientPicker";
 import styles from "./HrRequestPanel.module.css";
 
 const STORAGE_KEY = "hr-attendance:hr-requests:v1";
+// Fired after a new request is saved, so `AllRequestsHistory` (a sibling
+// component, not a parent/child - they don't share React state) knows to
+// re-read localStorage instead of only on its own mount.
+export const HR_REQUESTS_UPDATED_EVENT = "hr-attendance:hr-requests:updated";
 
 const CATEGORIES: { value: HrRequestCategory; label: string }[] = [
   { value: "Leave", label: "Leave" },
@@ -15,20 +19,12 @@ const CATEGORIES: { value: HrRequestCategory; label: string }[] = [
   { value: "Other", label: "Other" },
 ];
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function loadStored(fallback: HrRequest[]): HrRequest[] {
+function loadStored(): HrRequest[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as HrRequest[]) : fallback;
+    return raw ? (JSON.parse(raw) as HrRequest[]) : [];
   } catch {
-    return fallback;
+    return [];
   }
 }
 
@@ -36,34 +32,26 @@ function saveStored(requests: HrRequest[]) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
   } catch {
-    // localStorage unavailable - in-memory state still holds for this tab.
+    // localStorage unavailable - the request just won't persist past this submit.
   }
+  window.dispatchEvent(new Event(HR_REQUESTS_UPDATED_EVENT));
 }
 
 interface HrRequestPanelProps {
   recipientOptions: RequestRecipient[];
-  initialRequests: HrRequest[];
 }
 
 // TODO: submit to a real inbox (e.g. `POST /api/requests`) once there's a
 // module on the other end to route these to. Until then every request is
-// persisted locally and stays "Pending".
-export default function HrRequestPanel({
-  recipientOptions,
-  initialRequests,
-}: HrRequestPanelProps) {
-  const [requests, setRequests] = useState<HrRequest[]>(initialRequests);
+// persisted locally and stays "Pending". The submitted list itself renders
+// in `AllRequestsHistory` below (the "All requests" section), not here -
+// this panel is just the form.
+export default function HrRequestPanel({ recipientOptions }: HrRequestPanelProps) {
   const [category, setCategory] = useState<HrRequestCategory>("Leave");
   const [otherLabel, setOtherLabel] = useState("");
   const [summary, setSummary] = useState("");
   const [recipients, setRecipients] = useState<RequestRecipient[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setRequests(loadStored(initialRequests));
-    // Only merge from storage on mount; initialRequests is a static prop.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   function resetForm() {
     setCategory("Leave");
@@ -99,105 +87,64 @@ export default function HrRequestPanel({
       submittedAt: new Date().toISOString(),
     };
 
-    const next = [request, ...requests];
-    setRequests(next);
-    saveStored(next);
+    saveStored([request, ...loadStored()]);
     resetForm();
   }
 
   return (
-    <div>
-      <form className={styles.form} onSubmit={handleSubmit}>
-        <div className={styles.formRow}>
-          <label className={styles.field}>
-            Type
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as HrRequestCategory)}
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          {category === "Other" && (
-            <label className={styles.field}>
-              Specify
-              <input
-                type="text"
-                value={otherLabel}
-                onChange={(e) => setOtherLabel(e.target.value)}
-                placeholder="e.g. Equipment request"
-              />
-            </label>
-          )}
-        </div>
-
+    <form className={styles.form} onSubmit={handleSubmit}>
+      <div className={styles.formRow}>
         <label className={styles.field}>
-          Send to
-          <MentionRecipientPicker
-            options={recipientOptions}
-            value={recipients}
-            onChange={setRecipients}
-          />
-        </label>
-
-        <label className={styles.field}>
-          Summary
-          <textarea
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            placeholder="Describe your request..."
-          />
-        </label>
-
-        {error && <span className={styles.error}>{error}</span>}
-
-        <div className={styles.formActions}>
-          <button type="submit" className={styles.submitButton}>
-            Submit
-          </button>
-        </div>
-      </form>
-
-      {requests.length === 0 ? (
-        <p className={styles.empty}>No requests yet.</p>
-      ) : (
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Type</th>
-              <th>Summary</th>
-              <th>Sent to</th>
-              <th>Status</th>
-              <th>Submitted</th>
-            </tr>
-          </thead>
-          <tbody>
-            {requests.map((req) => (
-              <tr key={req.id}>
-                <td>{req.category === "Other" ? req.otherLabel : req.category}</td>
-                <td className={styles.summaryCell}>{req.summary}</td>
-                <td>
-                  <div className={styles.recipientChips}>
-                    {req.recipients.map((r) => (
-                      <span className={styles.recipientChip} key={r.id}>
-                        @{r.label}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td>
-                  <span className={styles.badge}>{req.status}</span>
-                </td>
-                <td className={styles.muted}>{formatDate(req.submittedAt)}</td>
-              </tr>
+          Type
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value as HrRequestCategory)}
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
             ))}
-          </tbody>
-        </table>
-      )}
-    </div>
+          </select>
+        </label>
+        {category === "Other" && (
+          <label className={styles.field}>
+            Specify
+            <input
+              type="text"
+              value={otherLabel}
+              onChange={(e) => setOtherLabel(e.target.value)}
+              placeholder="e.g. Equipment request"
+            />
+          </label>
+        )}
+      </div>
+
+      <label className={styles.field}>
+        Send to
+        <MentionRecipientPicker
+          options={recipientOptions}
+          value={recipients}
+          onChange={setRecipients}
+        />
+      </label>
+
+      <label className={styles.field}>
+        Summary
+        <textarea
+          value={summary}
+          onChange={(e) => setSummary(e.target.value)}
+          placeholder="Describe your request..."
+        />
+      </label>
+
+      {error && <span className={styles.error}>{error}</span>}
+
+      <div className={styles.formActions}>
+        <button type="submit" className={styles.submitButton}>
+          Submit
+        </button>
+      </div>
+    </form>
   );
 }

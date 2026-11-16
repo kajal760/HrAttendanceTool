@@ -2,18 +2,31 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Plus, X } from "lucide-react";
+import { Bell, Plus, X } from "lucide-react";
 import type { EmployeeOverview } from "@/types/hr";
 import { toneClass } from "./badge-tones";
 import formStyles from "../FormModal.module.css";
 import styles from "./Lifecycle.module.css";
 import { useDepartmentNames } from "../useDepartmentNames";
 
-type OnboardingDisplayStatus = "Joining" | "Not Started" | "In Progress" | "Completed";
+type OnboardingDisplayStatus = "Joining" | "Pending Verification" | "Not Started" | "In Progress" | "Completed";
+
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// A scheduled hire (registered now, joining later - see `submitStartOnboarding`
+// below) is kept deactivated (no portal access) from the moment they're
+// created. Once their joining date arrives, they sit here - access still
+// held - until HR verifies them in the popup below and grants it.
+function needsAccessVerification(e: EmployeeOverview): boolean {
+  return e.deactivated && e.joinedOn <= todayKey();
+}
 
 function onboardingDisplayStatus(e: EmployeeOverview): OnboardingDisplayStatus {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayKey();
   if (e.joinedOn > today) return "Joining";
+  if (e.deactivated) return "Pending Verification";
   const total = e.onboardingTasks.length;
   const done = e.onboardingTasks.filter((t) => t.done).length;
   if (done === 0) return "Not Started";
@@ -21,8 +34,9 @@ function onboardingDisplayStatus(e: EmployeeOverview): OnboardingDisplayStatus {
   return "In Progress";
 }
 
-const DISPLAY_TONE: Record<OnboardingDisplayStatus, "gray" | "amber" | "blue" | "green"> = {
+const DISPLAY_TONE: Record<OnboardingDisplayStatus, "gray" | "amber" | "blue" | "green" | "red"> = {
   Joining: "gray",
+  "Pending Verification": "red",
   "Not Started": "amber",
   "In Progress": "blue",
   Completed: "green",
@@ -96,8 +110,14 @@ export default function OnboardingTab({
   const [error, setError] = useState<string | null>(null);
   const [checklistFor, setChecklistFor] = useState<EmployeeOverview | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Auto-open once on load if anyone's already waiting on verification - the
+  // "HR gets notified" half of the scheduled-joining feature. Lazy initial
+  // state so it only pops up on arrival, not on every re-render afterwards;
+  // HR can still reopen it via the bell button once dismissed.
+  const [verifyPanelOpen, setVerifyPanelOpen] = useState(() => employees.some(needsAccessVerification));
 
   const onboarding = employees.filter((e) => e.status === "Onboarding");
+  const pendingVerification = onboarding.filter(needsAccessVerification);
 
   function openForm() {
     setForm(loadDraft());
@@ -147,7 +167,20 @@ export default function OnboardingTab({
         setError(data.error ?? "Could not start onboarding.");
         return;
       }
-      onEmployeeAdded(data.employee);
+      let newEmployee: EmployeeOverview = data.employee;
+      // Registered now, joining later: hold their access until the actual
+      // joining day, when HR has to verify and grant it explicitly (the
+      // popup below) rather than it being live from the day of registration.
+      if (form.joinedOn > todayKey()) {
+        const lockRes = await fetch(`/api/superadmin/employees/${newEmployee.id}/lifecycle`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "deactivate" }),
+        });
+        const lockData = await lockRes.json();
+        if (lockRes.ok) newEmployee = lockData.employee;
+      }
+      onEmployeeAdded(newEmployee);
       try {
         window.localStorage.removeItem(DRAFT_KEY);
       } catch {
@@ -158,6 +191,21 @@ export default function OnboardingTab({
       setError("Could not start onboarding - check your connection and try again.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function verifyAndGrantAccess(employee: EmployeeOverview) {
+    setBusyId(employee.id);
+    try {
+      const res = await fetch(`/api/superadmin/employees/${employee.id}/lifecycle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reactivate" }),
+      });
+      const data = await res.json();
+      if (res.ok) onEmployeeUpdated(data.employee);
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -200,7 +248,19 @@ export default function OnboardingTab({
   return (
     <div>
       <div className={styles.sectionHeader}>
-        <span />
+        {pendingVerification.length > 0 ? (
+          <button
+            type="button"
+            className={toneClass(styles, "red")}
+            style={{ border: "none", cursor: "pointer" }}
+            onClick={() => setVerifyPanelOpen(true)}
+          >
+            <Bell size={12} strokeWidth={2.25} style={{ verticalAlign: "middle", marginRight: 4 }} />
+            {pendingVerification.length} joiner{pendingVerification.length === 1 ? "" : "s"} need access verification
+          </button>
+        ) : (
+          <span />
+        )}
         <button type="button" className={styles.primaryButton} onClick={openForm}>
           <Plus size={14} strokeWidth={2.25} /> Start Onboarding
         </button>
@@ -397,6 +457,51 @@ export default function OnboardingTab({
                   Mark Onboarding Completed
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {verifyPanelOpen && pendingVerification.length > 0 && (
+        <div className={formStyles.overlay} onMouseDown={(e) => e.target === e.currentTarget && setVerifyPanelOpen(false)}>
+          <div className={formStyles.panel} role="dialog" aria-modal="true" aria-label="Verify new joiners">
+            <div className={formStyles.panelHeader}>
+              <h2 className={formStyles.title}>Verify new joiners</h2>
+              <button type="button" className={formStyles.closeButton} onClick={() => setVerifyPanelOpen(false)} aria-label="Close">
+                <X size={16} />
+              </button>
+            </div>
+            <p className={styles.hint}>
+              Their joining date has arrived, but portal access is still held. Confirm each one actually joined
+              before granting access.
+            </p>
+            {pendingVerification.map((e) => {
+              const managerName = managerOptions.find((m) => m.id === e.managerId)?.name;
+              return (
+                <div key={e.id} className={styles.checklistRow}>
+                  <span className={styles.checklistLabel}>
+                    {e.name} - {e.designation}, {e.department}
+                    <br />
+                    <span className={styles.muted}>
+                      Joined {formatDate(e.joinedOn)}
+                      {managerName ? ` · Reports to ${managerName}` : ""}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    className={formStyles.saveButton}
+                    onClick={() => verifyAndGrantAccess(e)}
+                    disabled={busyId === e.id}
+                  >
+                    {busyId === e.id ? "Granting..." : "Verify & Grant Access"}
+                  </button>
+                </div>
+              );
+            })}
+            <div className={formStyles.actions}>
+              <button type="button" className={formStyles.cancelButton} onClick={() => setVerifyPanelOpen(false)}>
+                Review later
+              </button>
             </div>
           </div>
         </div>

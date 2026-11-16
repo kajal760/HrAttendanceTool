@@ -1,4 +1,4 @@
-import { getTodaysBirthdays } from "@/lib/employee/mock-data";
+import type { DirectoryPerson } from "@/types/employee";
 import styles from "./BirthdayBanner.module.css";
 
 function joinNames(names: string[]): string {
@@ -7,10 +7,15 @@ function joinNames(names: string[]): string {
   return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
 }
 
+interface BirthdayBannerProps {
+  birthdays: DirectoryPerson[];
+}
+
 // Visible app-wide birthday callout. Pairs with the automated email sent by
-// `src/lib/employee/birthday-mailer.ts` at 10:00 AM on the same day.
-export default async function BirthdayBanner() {
-  const birthdays = await getTodaysBirthdays();
+// `src/lib/employee/birthday-mailer.ts` at 10:00 AM on the same day, and
+// with BirthdayConfetti (shown only to the birthday person themselves) -
+// `birthdays` is fetched once in the layout and shared by both.
+export default function BirthdayBanner({ birthdays }: BirthdayBannerProps) {
   if (birthdays.length === 0) return null;
 
   const names = joinNames(birthdays.map((b) => b.name));

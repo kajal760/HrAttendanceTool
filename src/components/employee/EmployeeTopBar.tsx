@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Bell } from "lucide-react";
 import LogoutButton from "@/components/auth/LogoutButton";
 import styles from "@/app/employee/layout.module.css";
@@ -18,27 +19,18 @@ export default function EmployeeTopBar({
   return (
     <header className={styles.topbar}>
       <div className={styles.brand}>
-        <span className={styles.brandMark}>HR</span>
-        <span>HR Attendance</span>
+        <span className={styles.brandMark}>HS</span>
+        <span>HumSetu</span>
       </div>
-
-      {/* Decorative period filter, matching the reference dashboard's "This
-          Month" control - not wired to anything yet since none of the
-          dashboard's data is broken down by period. */}
-      <select className={styles.periodFilter} defaultValue="month" aria-label="Period filter">
-        <option value="week">This Week</option>
-        <option value="month">This Month</option>
-        <option value="quarter">This Quarter</option>
-      </select>
 
       <div className={styles.topbarRight}>
         <span className={styles.bellButton} title={`${unreadAnnouncementCount} unread announcements`}>
           <Bell size={19} strokeWidth={1.75} />
           {unreadAnnouncementCount > 0 && <span className={styles.bellDot} />}
         </span>
-        <span className={styles.avatar} title={name}>
+        <Link href="/employee/profile" className={styles.avatar} title={name}>
           {photoUrl ? <img src={photoUrl} alt="" className={styles.avatarImg} /> : initials}
-        </span>
+        </Link>
         <LogoutButton className={styles.logoutButton} />
       </div>
     </header>

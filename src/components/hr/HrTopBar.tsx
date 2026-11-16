@@ -1,6 +1,7 @@
 import { Bell } from "lucide-react";
 import LogoutButton from "@/components/auth/LogoutButton";
 import GlobalSearch from "@/components/hr/GlobalSearch";
+import type { PortalBase } from "@/lib/portal";
 import styles from "@/app/superadmin/layout.module.css";
 
 function initialsFor(name: string): string {
@@ -13,14 +14,17 @@ function initialsFor(name: string): string {
 interface HrTopBarProps {
   pendingRequestCount: number;
   userName: string;
+  base: PortalBase;
 }
 
+// `base` isn't used here - kept in the prop list so callers don't need to
+// change when passing it, in case the avatar grows a destination again.
 export default function HrTopBar({ pendingRequestCount, userName }: HrTopBarProps) {
   return (
     <header className={styles.topbar}>
       <div className={styles.brand}>
-        <span className={styles.brandMark}>HR</span>
-        <span>HR Attendance</span>
+        <span className={styles.brandMark}>HS</span>
+        <span>HumSetu</span>
       </div>
 
       <GlobalSearch />
@@ -30,6 +34,8 @@ export default function HrTopBar({ pendingRequestCount, userName }: HrTopBarProp
           <Bell size={19} strokeWidth={1.75} />
           {pendingRequestCount > 0 && <span className={styles.bellDot} />}
         </span>
+        {/* No self-service account page - sign-in is OTP-based, so there's
+            nothing to change here; the avatar is just an identity marker. */}
         <span className={styles.avatar} title={userName}>
           {initialsFor(userName)}
         </span>

@@ -198,21 +198,6 @@
   color: var(--color-text);
 }
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.chip {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--color-info-bg);
-  color: var(--color-info);
-}
-
 .tableWrap {
   overflow-x: auto;
   border: 1px solid var(--color-border);
@@ -302,4 +287,113 @@
   min-width: 240px;
   max-width: 360px;
   font-size: 12px;
+}
+
+/* --- status/priority badges (card header) ------------------------------ */
+
+.badgeRow {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badgeGreen {
+  color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+.badgeAmber {
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+.badgeBlue {
+  color: var(--color-info);
+  background: var(--color-info-bg);
+}
+
+.badgeRed {
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+}
+
+.badgeGray {
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+}
+
+/* --- progress bar -------------------------------------------------------- */
+
+.progressRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-top: 12px;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-bg);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-hr-accent);
+}
+
+/* --- avatar stack (card footer) ------------------------------------------ */
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.avatarStack {
+  display: flex;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--color-hr-accent-bg);
+  color: var(--color-hr-accent);
+  font-size: 10px;
+  font-weight: 700;
+  border: 2px solid var(--color-surface);
+  margin-left: -8px;
+}
+
+.avatar:first-child {
+  margin-left: 0;
+}
+
+.dueDate {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
 }

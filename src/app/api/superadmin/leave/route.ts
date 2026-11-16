@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/backend";
 import { getLeaveRequests } from "@/lib/hr/leave-store";
 import { getSession } from "@/lib/auth/get-session";
 
@@ -9,5 +10,9 @@ export async function GET() {
   if (!session || session.role === "Employee") {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
-  return NextResponse.json({ requests: await getLeaveRequests() });
+  try {
+    return NextResponse.json({ requests: await getLeaveRequests() });
+  } catch (err) {
+    return errorResponse(err);
+  }
 }

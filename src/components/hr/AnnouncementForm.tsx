@@ -3,20 +3,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
-import {
-  ANNOUNCEMENT_CREATOR_ROLES,
-  ANNOUNCEMENT_PRIORITIES,
-  ANNOUNCEMENT_TYPES,
-} from "@/types/announcement";
-import type {
-  Announcement,
-  AnnouncementAttachment,
-  AnnouncementAudienceType,
-  AnnouncementCreatorRole,
-  AnnouncementPriority,
-  AnnouncementType,
-} from "@/types/announcement";
+import { ANNOUNCEMENT_PRIORITIES, ANNOUNCEMENT_TYPES } from "@/types/announcement";
+import type { Announcement, AnnouncementAudienceType, AnnouncementPriority, AnnouncementType } from "@/types/announcement";
 import type { EmployeeOverview } from "@/types/hr";
 import { withBase } from "@/lib/portal";
 import { usePortalBase } from "./usePortalBase";
@@ -48,20 +36,17 @@ export default function AnnouncementForm({ mode, announcement, employees }: Anno
 
   const [title, setTitle] = useState(announcement?.title ?? "");
   const [content, setContent] = useState(announcement?.content ?? "");
-  const [type, setType] = useState<AnnouncementType>(announcement?.type ?? "General");
+  const [type, setType] = useState<AnnouncementType>(announcement?.type ?? ANNOUNCEMENT_TYPES[0]);
   const [priority, setPriority] = useState<AnnouncementPriority>(announcement?.priority ?? "Normal");
   const [audienceType, setAudienceType] = useState<AnnouncementAudienceType>(announcement?.audience.type ?? "Everyone");
   const [audienceDepartment, setAudienceDepartment] = useState(announcement?.audience.department ?? departments[0] ?? "");
   const [audienceManagerId, setAudienceManagerId] = useState(announcement?.audience.managerId ?? managers[0]?.id ?? "");
   const [audienceEmployeeIds, setAudienceEmployeeIds] = useState<string[]>(announcement?.audience.employeeIds ?? []);
-  const [requireAck, setRequireAck] = useState(announcement?.requireAcknowledgement ?? false);
   const [publishMode, setPublishMode] = useState<"now" | "schedule">("now");
   const [scheduledAt, setScheduledAt] = useState(toDateTimeInputValue(announcement?.publishAt));
   const [expiresAt, setExpiresAt] = useState(toDateInputValue(announcement?.expiresAt));
-  const [createdByName, setCreatedByName] = useState(announcement?.createdByName ?? "Super Admin");
-  const [createdByRole, setCreatedByRole] = useState<AnnouncementCreatorRole>(announcement?.createdByRole ?? "Super Admin");
   const [files, setFiles] = useState<File[]>([]);
-  const [existingAttachments, setExistingAttachments] = useState<AnnouncementAttachment[]>(announcement?.attachments ?? []);
+  const existingAttachments = announcement?.attachments ?? [];
   const [submitting, setSubmitting] = useState<"draft" | "publish" | "save" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,7 +56,6 @@ export default function AnnouncementForm({ mode, announcement, employees }: Anno
     if (audienceType === "Department" && !audienceDepartment) return "Choose a department.";
     if (audienceType === "Team" && !audienceManagerId) return "Choose a manager for the team.";
     if (audienceType === "Employees" && audienceEmployeeIds.length === 0) return "Select at least one employee.";
-    if (!createdByName.trim()) return "Enter who's posting this.";
     return null;
   }
 
@@ -108,13 +92,10 @@ export default function AnnouncementForm({ mode, announcement, employees }: Anno
       if (audienceType === "Department") form.set("audienceDepartment", audienceDepartment);
       if (audienceType === "Team") form.set("audienceManagerId", audienceManagerId);
       if (audienceType === "Employees") form.set("audienceEmployeeIds", JSON.stringify(audienceEmployeeIds));
-      form.set("requireAcknowledgement", String(requireAck));
       form.set("saveAsDraft", String(saveAsDraft));
       form.set("publishMode", publishMode);
       if (publishMode === "schedule") form.set("scheduledAt", scheduledAt);
       if (expiresAt) form.set("expiresAt", expiresAt);
-      form.set("createdByName", createdByName.trim());
-      form.set("createdByRole", createdByRole);
       for (const file of files) form.append("attachments", file);
 
       const res = await fetch("/api/superadmin/announcements", { method: "POST", body: form });
@@ -123,7 +104,7 @@ export default function AnnouncementForm({ mode, announcement, employees }: Anno
         setError(data.error ?? "Could not save announcement.");
         return;
       }
-      router.push(withBase(base, `/announcements/${data.announcement.id}`));
+      router.push(withBase(base, `/company-updates/announcements/${data.announcement.id}`));
     } catch {
       setError("Could not save announcement - check your connection and try again.");
     } finally {
@@ -151,9 +132,7 @@ export default function AnnouncementForm({ mode, announcement, employees }: Anno
           type,
           priority,
           audience: buildAudience(),
-          requireAcknowledgement: requireAck,
           expiresAt: expiresAt || null,
-          attachments: existingAttachments,
         }),
       });
       const data = await res.json();
@@ -161,7 +140,7 @@ export default function AnnouncementForm({ mode, announcement, employees }: Anno
         setError(data.error ?? "Could not save changes.");
         return;
       }
-      router.push(withBase(base, `/announcements/${announcement!.id}`));
+      router.push(withBase(base, `/company-updates/announcements/${announcement!.id}`));
     } catch {
       setError("Could not save changes - check your connection and try again.");
     } finally {
@@ -261,20 +240,6 @@ export default function AnnouncementForm({ mode, announcement, employees }: Anno
           <span>Expiry date (optional)</span>
           <input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
         </label>
-
-        <label className={styles.field}>
-          <span>Posting as</span>
-          <select value={createdByRole} onChange={(e) => setCreatedByRole(e.target.value as AnnouncementCreatorRole)}>
-            {ANNOUNCEMENT_CREATOR_ROLES.map((r) => (
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
-        </label>
-
-        <label className={styles.field}>
-          <span>Posted by (name)</span>
-          <input type="text" value={createdByName} onChange={(e) => setCreatedByName(e.target.value)} />
-        </label>
       </div>
 
       {audienceType === "Employees" && (
@@ -299,11 +264,6 @@ export default function AnnouncementForm({ mode, announcement, employees }: Anno
         </div>
       )}
 
-      <label className={styles.checkboxRow}>
-        <input type="checkbox" checked={requireAck} onChange={(e) => setRequireAck(e.target.checked)} />
-        Require acknowledgement ("I have read and understood this")
-      </label>
-
       <div className={styles.attachmentSection}>
         <span className={styles.checklistTitle}>Attachments</span>
         {existingAttachments.length > 0 && (
@@ -311,14 +271,6 @@ export default function AnnouncementForm({ mode, announcement, employees }: Anno
             {existingAttachments.map((att) => (
               <li key={att.id}>
                 <span>{att.name}</span>
-                <button
-                  type="button"
-                  className={styles.removeAttachment}
-                  onClick={() => setExistingAttachments((prev) => prev.filter((a) => a.id !== att.id))}
-                  aria-label={`Remove ${att.name}`}
-                >
-                  <X size={12} />
-                </button>
               </li>
             ))}
           </ul>
@@ -327,7 +279,7 @@ export default function AnnouncementForm({ mode, announcement, employees }: Anno
           <input
             type="file"
             multiple
-            accept=".pdf,.doc,.docx,.xls,.xlsx,image/*"
+            accept=".pdf,.jpg,.jpeg,.png"
             onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
           />
         )}

@@ -1,7 +1,11 @@
 // Announcements - Manager/Super Admin (and, for the demo, HR posting under
 // its own "role") can publish company/department/team/individual notices
-// that employees receive, read, and optionally must acknowledge.
+// that employees receive and read.
 
+// "General" is a legacy type - still a valid value on older announcements
+// (so it's kept in the union rather than cast away), but no longer offered
+// as a choice (see `ANNOUNCEMENT_TYPES` below): every new announcement
+// should pick a specific type instead of the catch-all default.
 export type AnnouncementType =
   | "General"
   | "HR"
@@ -13,7 +17,6 @@ export type AnnouncementType =
   | "Urgent";
 
 export const ANNOUNCEMENT_TYPES: AnnouncementType[] = [
-  "General",
   "HR",
   "Holiday",
   "Attendance",
@@ -83,11 +86,6 @@ export interface AnnouncementReadReceipt {
   readAt: string; // ISO
 }
 
-export interface AnnouncementAcknowledgement {
-  employeeId: string;
-  acknowledgedAt: string; // ISO
-}
-
 export type AnnouncementHistoryEventType = "Created" | "Edited" | "Published" | "Scheduled" | "Archived";
 
 export interface AnnouncementHistoryEvent {
@@ -106,7 +104,6 @@ export interface Announcement {
   priority: AnnouncementPriority;
   audience: AnnouncementAudience;
   lifecycle: AnnouncementLifecycle;
-  requireAcknowledgement: boolean;
   publishAt: string; // ISO
   expiresAt?: string; // ISO
   attachments: AnnouncementAttachment[];
@@ -115,6 +112,5 @@ export interface Announcement {
   createdAt: string; // ISO
   updatedAt: string; // ISO
   reads: AnnouncementReadReceipt[];
-  acknowledgements: AnnouncementAcknowledgement[];
   history: AnnouncementHistoryEvent[];
 }

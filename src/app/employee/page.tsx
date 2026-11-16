@@ -4,17 +4,15 @@ import {
   getAssetRequests,
   getAttendanceCalendar,
   getCompanyEvents,
-  getCorrectionRequests,
   getEmployeeDashboardData,
   getRecentWorkHours,
   getUpcomingBirthdays,
   getUpcomingHolidays,
-} from "@/lib/employee/mock-data";
+} from "@/lib/employee/dashboard-data";
 import { getAnnouncements } from "@/lib/hr/announcement-store";
 import { getEmployeeOverviews } from "@/lib/hr/employee-store";
-import { getLeaveRequestsForEmployee } from "@/lib/hr/leave-store";
-import { computeBalances } from "@/lib/hr/leave-balance";
-import { getSettings } from "@/lib/hr/settings-store";
+import { getCorrectionsForEmployee } from "@/lib/hr/attendance-corrections";
+import { getLeaveRequestsForEmployee, getLeaveSummary } from "@/lib/hr/leave-store";
 import { announcementStatus, resolveAudience } from "@/lib/announcements/status";
 import { requireCurrentEmployee } from "@/lib/auth/current-employee";
 import StatCard from "@/components/employee/StatCard";
@@ -32,7 +30,7 @@ import EventsWidget from "@/components/employee/EventsWidget";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "My Dashboard | HR Attendance",
+  title: "My Dashboard | HumSetu",
 };
 
 export const dynamic = "force-dynamic";
@@ -55,7 +53,7 @@ export default async function EmployeeDashboardPage() {
     employees,
     corrections,
     leaveRequests,
-    settings,
+    leave,
     assetRequests,
     calendar,
     monthlyHours,
@@ -65,18 +63,17 @@ export default async function EmployeeDashboardPage() {
     getEmployeeDashboardData(employee),
     getUpcomingBirthdays(),
     getAnnouncements(),
-    getEmployeeOverviews(),
-    getCorrectionRequests(),
+    getEmployeeOverviews().catch(() => []),
+    getCorrectionsForEmployee(employee.id),
     getLeaveRequestsForEmployee(employee.id),
-    getSettings(),
+    getLeaveSummary(employee.id),
     getAssetRequests(),
-    getAttendanceCalendar(),
-    getRecentWorkHours(),
+    getAttendanceCalendar(employee.id),
+    getRecentWorkHours(employee.id),
     getUpcomingHolidays(),
     getCompanyEvents(),
   ]);
 
-  const leave = computeBalances(leaveRequests, employee.id, settings.leaveYearStart);
   const activeTasks = tasks.counts.Pending + tasks.counts.Ongoing + tasks.counts.Overdue;
 
   // Same "what's actually live and addressed to me" filter the Announcements

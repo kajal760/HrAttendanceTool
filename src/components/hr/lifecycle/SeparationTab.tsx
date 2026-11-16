@@ -9,6 +9,7 @@ import { withBase } from "@/lib/portal";
 import { usePortalBase } from "../usePortalBase";
 import { toneClass } from "./badge-tones";
 import ConfirmDialog from "./ConfirmDialog";
+import StatCard from "../StatCard";
 import formStyles from "../FormModal.module.css";
 import styles from "./Lifecycle.module.css";
 
@@ -202,30 +203,12 @@ export default function SeparationTab({ employees, onEmployeeUpdated, onViewLife
   return (
     <div>
       <div className={styles.statGrid}>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>{summary.resignations}</span>
-          <span className={styles.statLabel}>Resignations</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>{summary.noticePeriod}</span>
-          <span className={styles.statLabel}>Notice Period</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>{summary.handoverPending}</span>
-          <span className={styles.statLabel}>Handover Pending</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>{summary.clearancePending}</span>
-          <span className={styles.statLabel}>Asset Clearance Pending</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>{summary.fnfPending}</span>
-          <span className={styles.statLabel}>Full & Final Pending</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statValue}>{summary.completedExits}</span>
-          <span className={styles.statLabel}>Completed Exits</span>
-        </div>
+        <StatCard label="Resignations" value={summary.resignations} />
+        <StatCard label="Notice Period" value={summary.noticePeriod} />
+        <StatCard label="Handover Pending" value={summary.handoverPending} />
+        <StatCard label="Asset Clearance Pending" value={summary.clearancePending} />
+        <StatCard label="Full & Final Pending" value={summary.fnfPending} />
+        <StatCard label="Completed Exits" value={summary.completedExits} />
       </div>
 
       <div className={styles.sectionHeader}>

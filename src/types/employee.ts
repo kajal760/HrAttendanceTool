@@ -1,6 +1,8 @@
 // Shared types for the Employee (self-service) module.
-// Mirrors the eventual API contracts so the mock data layer in
-// `src/lib/employee/mock-data.ts` can be swapped for real fetch calls later.
+// Implemented by `src/lib/employee/dashboard-data.ts`, mostly against real
+// backend endpoints - see that file's comments for the few widgets
+// (software licenses, company events, asset requests) that have no backend
+// data source yet and come back empty.
 
 import type { WorkTaskSummary } from "@/types/work";
 
@@ -33,6 +35,10 @@ export interface LeaveSummary {
   totalAllocated: number;
   totalUsed: number;
   totalRemaining: number;
+  // Rounded 0-100, totalUsed / totalAllocated - the leave-usage meter and
+  // the 80%-used warning (employee popup, HR headcount stat) both key off
+  // this one number.
+  percentUsed: number;
   byType: LeaveTypeBalance[];
 }
 
@@ -93,18 +99,6 @@ export interface AttendanceLogEntry {
   status: AttendanceDayStatus;
 }
 
-export type CorrectionRequestStatus = "Pending" | "Approved" | "Rejected";
-
-export interface CorrectionRequest {
-  id: string;
-  date: string; // YYYY-MM-DD, the day being corrected
-  requestedClockIn: string; // HH:MM
-  requestedClockOut?: string; // HH:MM
-  reason: string;
-  status: CorrectionRequestStatus;
-  submittedAt: string; // ISO
-}
-
 // --- Asset Management -----------------------------------------------------
 
 export type AssetType =
@@ -127,7 +121,9 @@ export interface AssetItem {
   status: AssetStatus;
   allocatedOn: string; // YYYY-MM-DD
   returnedOn?: string; // YYYY-MM-DD
-  condition: AssetCondition;
+  // The backend doesn't track condition - only set when it can be inferred
+  // from asset status (e.g. currently under repair).
+  condition?: AssetCondition;
 }
 
 export type LicenseStatus = "Active" | "Expiring Soon" | "Expired";
@@ -224,27 +220,29 @@ export interface HrRequest {
 }
 
 // --- Leave Management --------------------------------------------------
-// The BRD's six leave categories, distinct from the free-text "Leave" option
-// on the generic HR Requests form above - this is the real apply/track flow.
+// Leave types and their rules (yearly quota, half days, certificates,
+// maternity) are defined by the backend's `leave_types` table - a category
+// is that type's name, e.g. "Casual Leave". Distinct from the free-text
+// "Leave" option on the generic HR Requests form above.
 
-export type LeaveCategory =
-  | "Casual Leave"
-  | "Sick Leave"
-  | "Compensatory Leave"
-  | "Mandatory Leave"
-  | "Birthday Leave"
-  | "Work Anniversary Leave";
+export type LeaveCategory = string;
 
-export const LEAVE_CATEGORIES: LeaveCategory[] = [
-  "Casual Leave",
-  "Sick Leave",
-  "Compensatory Leave",
-  "Mandatory Leave",
-  "Birthday Leave",
-  "Work Anniversary Leave",
-];
+export interface LeaveTypeOption {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  annualQuota: number | null;
+  maxDaysPerRequest: number | null;
+  allowHalfDay: boolean;
+  certificateRequiredAfterDays: number | null;
+  // Maternity: needs the expected delivery date.
+  needsExpectedDeliveryDate: boolean;
+}
 
-export type LeaveRequestStatus = "Pending" | "Approved" | "Rejected";
+export type LeaveRequestStatus = "Pending" | "Approved" | "Rejected" | "Cancelled";
+
+export type HalfDaySession = "First Half" | "Second Half";
 
 export interface LeaveRequest {
   id: string;
@@ -253,13 +251,18 @@ export interface LeaveRequest {
   category: LeaveCategory;
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
-  days: number;
+  days: number; // working days (calendar days for maternity); 0.5 for a half day
   reason: string;
   status: LeaveRequestStatus;
   submittedAt: string; // ISO
   decidedBy?: string;
   decidedAt?: string; // ISO
   decisionNote?: string;
+  halfDaySession?: HalfDaySession;
+  expectedDeliveryDate?: string; // YYYY-MM-DD
+  hasAttachment: boolean;
+  // Policy says this request needs a medical certificate before approval.
+  certificateRequired: boolean;
 }
 
 // --- Company holidays & events ------------------------------------------

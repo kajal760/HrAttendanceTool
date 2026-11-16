@@ -4,7 +4,7 @@ import PeriodFilter from "@/components/hr/attendance/PeriodFilter";
 import AttendanceTable from "@/components/hr/attendance/AttendanceTable";
 
 export const metadata: Metadata = {
-  title: "Daily Attendance | HR Attendance",
+  title: "Daily Attendance | HumSetu",
 };
 
 export const dynamic = "force-dynamic";

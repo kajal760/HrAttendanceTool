@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api/backend";
 import { getSettings, patchSettings } from "@/lib/hr/settings-store";
 import { getSession } from "@/lib/auth/get-session";
 
@@ -9,7 +10,11 @@ export async function GET() {
   if (!session || session.role === "Employee") {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
-  return NextResponse.json({ settings: await getSettings() });
+  try {
+    return NextResponse.json({ settings: await getSettings() });
+  } catch (err) {
+    return errorResponse(err);
+  }
 }
 
 export async function PATCH(request: Request) {
@@ -30,6 +35,10 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "celebrations must be an object." }, { status: 400 });
   }
 
-  const updated = await patchSettings({ leaveYearStart, celebrations });
-  return NextResponse.json({ settings: updated });
+  try {
+    const updated = await patchSettings({ leaveYearStart, celebrations });
+    return NextResponse.json({ settings: updated });
+  } catch (err) {
+    return errorResponse(err);
+  }
 }

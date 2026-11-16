@@ -1,6 +1,14 @@
 :root {
   --color-bg: #f5f6f8;
-  --color-surface: #ffffff;
+  /* Translucent by design, so cards/panels/tables let the page's gradient
+     glow show through instead of sitting on a flat white block. Dialogs
+     need a fully opaque card (a modal over a dark scrim turns muddy if its
+     own background is see-through too), so they use `-opaque` instead -
+     see FormModal.module.css, EmployeeFormModal.module.css,
+     ConfirmDialog.module.css, LeaveLimitAlert.module.css,
+     LeaveRequests.module.css and Profile.module.css's modal/dialog panels. */
+  --color-surface: rgba(255, 255, 255, 0.88);
+  --color-surface-opaque: #ffffff;
   --color-border: #e3e6ea;
   --color-text: #1a1d21;
   --color-text-muted: #666d76;
@@ -15,18 +23,35 @@
   --color-info: #4a3aa7;
   --color-info-bg: #ece9fb;
 
-  /* HR module chrome (top bar + sidebar) and chart tokens - teal family */
-  --color-hr-topbar: #14b8a6;
-  --color-hr-sidebar: #0b6f64;
+  /* HR module chrome (top bar + sidebar) and chart tokens - blue family.
+     `-topbar`/`-sidebar` stay solid colors (they back borders and text, e.g.
+     the notification-dot border and the active-sidebar-item text color,
+     which can't take a gradient); the matching `-gradient` token is what
+     the topbar/sidebar backgrounds actually paint with. */
+  --color-hr-topbar: #2563eb;
+  --color-hr-topbar-gradient: linear-gradient(135deg, #1d4ed8 0%, #2563eb 55%, #3b82f6 100%);
+  --color-hr-sidebar: #2c4a94;
+  --color-hr-sidebar-gradient: linear-gradient(180deg, #2c4a94 0%, #4169c9 100%);
   --color-hr-sidebar-hover: rgba(255, 255, 255, 0.1);
   --color-hr-sidebar-active-bg: rgba(255, 255, 255, 0.16);
   --color-hr-sidebar-text: rgba(255, 255, 255, 0.75);
   --color-hr-sidebar-text-active: #ffffff;
-  --color-hr-accent: #0d9488;
-  --color-hr-accent-bg: #ccfbf1;
-  --color-chart-grid: #cdf3ec;
-  --color-chart-axis: #99f6e4;
-  --color-chart-muted: #5b7d79;
+  --color-hr-accent: #2563eb;
+  --color-hr-accent-bg: #e7f0ff;
+  --color-chart-grid: #d8e8fb;
+  --color-chart-axis: #bcdcfa;
+  --color-chart-muted: #5b728f;
+
+  /* Page-level background: a light, near-white blue gradient. Kept separate
+     from `--color-bg` (which stays a flat neutral) because `--color-bg` is
+     also reused for dozens of small surfaces - inputs, hover states, table
+     headers - where a gradient would look noisy. Only the page shell paints
+     with this one. Light enough that every page's title/subtitle header
+     (the literal inline-style idiom shared by ~60 page.tsx files) just
+     inherits the normal dark `--color-text` / `--color-text-muted` again -
+     no separate white-text override needed, unlike the earlier dark version
+     of this background. */
+  --color-page-bg-gradient: linear-gradient(135deg, #dbe7fb 0%, #eaf1fc 55%, #f7faff 100%);
 
   /* Categorical series palette - identity color for multi-category charts
      (e.g. "Requests by type"). Fixed hue order, validated for CVD
@@ -42,9 +67,13 @@
   --color-chart-series-7: #4a3aa7; /* violet */
   --color-chart-series-8: #e34948; /* red */
 
-  /* Contrasting call-to-action accent (coral) so buttons stand out against teal */
-  --color-hr-cta: #f2542d;
-  --color-hr-cta-hover: #d9431f;
+  /* Primary call-to-action: a two-tone blue gradient (bright to deep) so
+     buttons still read as "the" action even though the rest of the chrome
+     is blue too - the shading does the contrast work a different hue used
+     to. Every caller just does `background: var(--color-hr-cta)`, so the
+     gradient drops in anywhere a solid color used to be. */
+  --color-hr-cta: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  --color-hr-cta-hover: linear-gradient(135deg, #2563eb 0%, #173fae 100%);
   --color-hr-cta-contrast: #ffffff;
 
   --radius-sm: 6px;
@@ -57,7 +86,8 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --color-bg: #14161a;
-    --color-surface: #1c1f24;
+    --color-surface: rgba(28, 31, 36, 0.88);
+    --color-surface-opaque: #1c1f24;
     --color-border: #2c3036;
     --color-text: #edeef0;
     --color-text-muted: #9aa1a9;
@@ -72,13 +102,16 @@
     --color-info: #9085e9;
     --color-info-bg: rgba(144, 133, 233, 0.14);
 
-    --color-hr-topbar: #0f8a7c;
-    --color-hr-sidebar: #05433c;
-    --color-hr-accent: #2dd4bf;
-    --color-hr-accent-bg: rgba(45, 212, 191, 0.14);
-    --color-chart-grid: #1c3330;
-    --color-chart-axis: #244440;
-    --color-chart-muted: #9aa1a9;
+    --color-hr-topbar: #3b82f6;
+    --color-hr-topbar-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 55%, #60a5fa 100%);
+    --color-hr-sidebar: #1e3a73;
+    --color-hr-sidebar-gradient: linear-gradient(180deg, #1e3a73 0%, #2d4f9e 100%);
+    --color-hr-accent: #60a5fa;
+    --color-hr-accent-bg: rgba(59, 130, 246, 0.16);
+    --color-chart-grid: #1b2947;
+    --color-chart-axis: #28406e;
+    --color-chart-muted: #93a4c3;
+    --color-page-bg-gradient: linear-gradient(135deg, #142545 0%, #1e3a73 55%, #2a53a8 100%);
 
     --color-chart-series-1: #3987e5;
     --color-chart-series-2: #d95926;
@@ -89,9 +122,9 @@
     --color-chart-series-7: #9085e9;
     --color-chart-series-8: #e66767;
 
-    --color-hr-cta: #fb6b47;
-    --color-hr-cta-hover: #f2542d;
-    --color-hr-cta-contrast: #1a0f0a;
+    --color-hr-cta: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+    --color-hr-cta-hover: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    --color-hr-cta-contrast: #ffffff;
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
@@ -109,7 +142,7 @@ body {
 }
 
 body {
-  background: var(--color-bg);
+  background: var(--color-page-bg-gradient);
   color: var(--color-text);
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
